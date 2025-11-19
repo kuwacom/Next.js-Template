@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ExampleHeader } from "@/components/Headers/ExampleHeader";
+import SWRProvider from "@/components/providers/SWRProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,8 +33,10 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <ExampleHeader />
-          <main className="pt-20 px-6 max-w-5xl mx-auto">{children}</main>
+          <SWRProvider>
+            <ExampleHeader />
+            <main className="pt-20 px-6 max-w-5xl mx-auto">{children}</main>
+          </SWRProvider>
         </ThemeProvider>
       </body>
     </html>
