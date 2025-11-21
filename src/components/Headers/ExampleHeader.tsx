@@ -4,9 +4,15 @@ import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor } from "lucide-react";
 import * as Switch from "@radix-ui/react-switch";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 export function ExampleHeader() {
   const { theme, setTheme, systemTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const current = theme === "system" ? systemTheme : theme;
 
@@ -23,28 +29,31 @@ export function ExampleHeader() {
         </h1>
 
         <div className="flex items-center gap-4">
+          {/* Light */}
           <button
-            onClick={() => setTheme("light")}
+            onClick={() => mounted && setTheme("light")}
             className={`p-2 rounded-full hover:bg-muted transition ${
-              current === "light" ? "bg-muted" : ""
+              mounted && current === "light" ? "bg-muted" : ""
             }`}
           >
             <Sun size={18} />
           </button>
 
+          {/* Dark */}
           <button
-            onClick={() => setTheme("dark")}
+            onClick={() => mounted && setTheme("dark")}
             className={`p-2 rounded-full hover:bg-muted transition ${
-              current === "dark" ? "bg-muted" : ""
+              mounted && current === "dark" ? "bg-muted" : ""
             }`}
           >
             <Moon size={18} />
           </button>
 
+          {/* System */}
           <button
-            onClick={() => setTheme("system")}
+            onClick={() => mounted && setTheme("system")}
             className={`p-2 rounded-full hover:bg-muted transition ${
-              theme === "system" ? "bg-muted" : ""
+              mounted && theme === "system" ? "bg-muted" : ""
             }`}
           >
             <Monitor size={18} />
@@ -52,16 +61,19 @@ export function ExampleHeader() {
 
           <div className="h-6 w-px bg-border mx-2" />
 
-          {/* Radix UI Switch */}
+          {/* Radix Switch with hydration-safe guard */}
           <label className="flex items-center gap-2 text-sm">
             <span>Dark</span>
-            <Switch.Root
-              checked={current === "dark"}
-              onCheckedChange={(v) => setTheme(v ? "dark" : "light")}
-              className="w-[42px] h-[25px] bg-muted rounded-full relative data-[state=checked]:bg-primary transition-colors"
-            >
-              <Switch.Thumb className="block w-[21px] h-[21px] bg-background rounded-full shadow transform transition-transform duration-200 translate-x-0 data-[state=checked]:translate-x-[17px]" />
-            </Switch.Root>
+
+            {mounted && (
+              <Switch.Root
+                checked={current === "dark"}
+                onCheckedChange={(v) => setTheme(v ? "dark" : "light")}
+                className="w-[42px] h-[25px] bg-muted rounded-full relative data-[state=checked]:bg-primary transition-colors"
+              >
+                <Switch.Thumb className="block w-[21px] h-[21px] bg-background rounded-full shadow transform transition-transform duration-200 translate-x-0 data-[state=checked]:translate-x-[17px]" />
+              </Switch.Root>
+            )}
           </label>
         </div>
       </div>
