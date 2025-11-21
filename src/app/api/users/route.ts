@@ -1,32 +1,30 @@
+import { users } from "@/services/UserService";
 import { NextRequest, NextResponse } from "next/server";
 
-// Define the User type based on OpenAPI schema
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
-
-// Example data matching the OpenAPI User schema
-const users: User[] = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john@example.com",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane@example.com",
-  },
-  {
-    id: 3,
-    name: "Alice Johnson",
-    email: "alice@example.com",
-  },
-];
-
 export async function GET(request: NextRequest) {
+  await new Promise((resolve) => setTimeout(resolve, 500));
   // Return the list of users as JSON
   return NextResponse.json(users);
+}
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const { name, email } = body;
+
+  if (!name || !email) {
+    return NextResponse.json(
+      { error: "Name and email are required" },
+      { status: 400 }
+    );
+  }
+
+  const newUser = {
+    id: users.length > 0 ? users[users.length - 1].id + 1 : 1,
+    name,
+    email,
+  };
+  users.push(newUser);
+
+  console.log(users);
+  return NextResponse.json(newUser, { status: 201 });
 }
