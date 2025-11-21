@@ -1,4 +1,4 @@
-import { User } from "@/types/api";
+import { User, UserRequest, UserResponse } from "@/types/api";
 import useSWR, { mutate } from "swr";
 import { apiClient } from "@/api/apiClient";
 import { apiFetcher } from "@/api/fetcher";
@@ -37,12 +37,23 @@ export function useUser(userId: string | null) {
   };
 }
 
+export async function addUser(user: UserRequest): Promise<User> {
+  try {
+    const res = await apiClient.post<UserResponse>("/users", user);
+    // Optionally update the cache for the users list
+    mutate("/users");
+    return res.data!;
+  } catch (error) {
+    throw error;
+  }
+}
+
 export async function updateUser(
   userId: string,
-  updates: Partial<User>
+  user: UserRequest
 ): Promise<User> {
   try {
-    const res = await apiClient.put<User>(`/users/${userId}`, updates);
+    const res = await apiClient.put<UserResponse>(`/users/${userId}`, user);
     // Update the cache for this user
     mutate(`/users/${userId}`, res.data, false);
     return res.data!;
@@ -53,7 +64,7 @@ export async function updateUser(
 
 export async function deleteUser(userId: string): Promise<void> {
   try {
-    await apiClient.delete(`/users/${userId}`);
+    await apiClient.delete<UserResponse>(`/users/${userId}`);
     // Remove from cache
     mutate(`/users/${userId}`, null, false);
   } catch (error) {
