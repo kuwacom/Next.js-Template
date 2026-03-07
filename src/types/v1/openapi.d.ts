@@ -33,14 +33,47 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /** Create a user */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UserRequest"];
+                };
+            };
+            responses: {
+                /** @description Created user object */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["User"];
+                    };
+                };
+                /** @description Bad request (missing fields) */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/users/{id}": {
+    "/users/{userId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -53,7 +86,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    id: number;
+                    userId: number;
                 };
                 cookie?: never;
             };
@@ -68,12 +101,23 @@ export interface paths {
                         "application/json": components["schemas"]["User"];
                     };
                 };
+                /** @description Bad request (invalid ID) */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description User not found */
                 404: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
                 };
             };
         };
@@ -83,16 +127,13 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    id: number;
+                    userId: number;
                 };
                 cookie?: never;
             };
             requestBody: {
                 content: {
-                    "application/json": {
-                        name: string;
-                        email: string;
-                    };
+                    "application/json": components["schemas"]["UserRequest"];
                 };
             };
             responses: {
@@ -110,14 +151,18 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
                 };
                 /** @description User not found */
                 404: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
                 };
             };
         };
@@ -128,7 +173,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    id: number;
+                    userId: number;
                 };
                 cookie?: never;
             };
@@ -140,10 +185,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            message?: string;
-                            user?: components["schemas"]["User"];
-                        };
+                        "application/json": components["schemas"]["DeleteUserResponse"];
                     };
                 };
                 /** @description Bad request (invalid ID) */
@@ -151,14 +193,18 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
                 };
                 /** @description User not found */
                 404: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
                 };
             };
         };
@@ -175,6 +221,17 @@ export interface components {
             id: number;
             name: string;
             email: string;
+        };
+        UserRequest: {
+            name: string;
+            email: string;
+        };
+        DeleteUserResponse: {
+            message: string;
+            user: components["schemas"]["User"];
+        };
+        ErrorResponse: {
+            error: string;
         };
     };
     responses: never;

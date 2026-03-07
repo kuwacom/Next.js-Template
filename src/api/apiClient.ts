@@ -1,5 +1,5 @@
 import logger from "@/services/logger";
-import { paths } from "@/types/openapi";
+import { paths } from "@/types/v1/openapi";
 import createClient from "openapi-fetch";
 
 // エラーハンドリング用のカスタムエラークラス
@@ -179,7 +179,22 @@ export class APIClient {
   }
 }
 
+function normalizeUrlSegment(segment: string) {
+  return segment.replace(/^\/+|\/+$/g, "");
+}
+
+function buildApiBaseUrl() {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+  const apiVersion = process.env.NEXT_PUBLIC_API_VERSION ?? "";
+
+  if (!apiVersion) {
+    return apiUrl.replace(/\/+$/g, "");
+  }
+
+  return `${apiUrl.replace(/\/+$/g, "")}/${normalizeUrlSegment(apiVersion)}`;
+}
+
 export const apiClient = new APIClient({
-  baseUrl: `${process.env.NEXT_PUBLIC_API_URL}/${process.env.NEXT_PUBLIC_API_VERSION}`,
+  baseUrl: buildApiBaseUrl(),
   timeout: 10000,
 });

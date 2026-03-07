@@ -1,4 +1,9 @@
-import { User, UserRequest, UserResponse } from "@/types/api";
+import {
+  DeleteUserResponse,
+  User,
+  UserRequest,
+  UserResponse,
+} from "@/types/v1/api";
 import useSWR, { mutate } from "swr";
 import { apiClient } from "@/api/apiClient";
 import { apiFetcher } from "@/api/fetcher";
@@ -64,7 +69,7 @@ export async function updateUser(
 
 export async function deleteUser(userId: string): Promise<void> {
   try {
-    await apiClient.delete<UserResponse>(`/users/${userId}`);
+    await apiClient.delete<DeleteUserResponse>(`/users/${userId}`);
     // Remove from cache
     mutate(`/users/${userId}`, null, false);
   } catch (error) {

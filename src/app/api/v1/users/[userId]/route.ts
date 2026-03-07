@@ -2,17 +2,17 @@ import { users } from "@/services/UserService";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  request: NextRequest,
+  _: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   const { userId } = await params;
   const id = parseInt(userId, 10);
 
-  if (isNaN(id)) {
+  if (Number.isNaN(id)) {
     return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
   }
 
-  const user = users.find((u) => u.id === id);
+  const user = users.find((item) => item.id === id);
 
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -28,7 +28,7 @@ export async function PUT(
   const { userId } = await params;
   const id = parseInt(userId, 10);
 
-  if (isNaN(id)) {
+  if (Number.isNaN(id)) {
     return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
   }
 
@@ -42,7 +42,7 @@ export async function PUT(
     );
   }
 
-  const userIndex = users.findIndex((u) => u.id === id);
+  const userIndex = users.findIndex((item) => item.id === id);
 
   if (userIndex === -1) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -50,23 +50,21 @@ export async function PUT(
 
   users[userIndex] = { id, name, email };
 
-  console.log(users);
-
   return NextResponse.json(users[userIndex]);
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   const { userId } = await params;
   const id = parseInt(userId, 10);
 
-  if (isNaN(id)) {
+  if (Number.isNaN(id)) {
     return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
   }
 
-  const userIndex = users.findIndex((u) => u.id === id);
+  const userIndex = users.findIndex((item) => item.id === id);
 
   if (userIndex === -1) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });

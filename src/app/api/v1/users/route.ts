@@ -1,8 +1,7 @@
 import { users } from "@/services/UserService";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
-  // Return the list of users as JSON
+export async function GET() {
   return NextResponse.json(users);
 }
 
@@ -22,8 +21,8 @@ export async function POST(request: NextRequest) {
     name,
     email,
   };
+
   users.push(newUser);
 
-  console.log(users);
   return NextResponse.json(newUser, { status: 201 });
 }

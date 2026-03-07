@@ -6,7 +6,7 @@ import {
   updateUser,
   deleteUser,
   addUser,
-} from "@/api/users/useUsers";
+} from "@/api/v1/users/useUsers";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User } from "@/types/api";
+import { User } from "@/types/v1/api";
 
 /* ============================
    ErrorBoundary
@@ -237,7 +237,7 @@ export default function SWRPage() {
       mutate((current) => current?.filter((u) => u.id !== userId), {
         revalidate: true,
       });
-    } catch (error) {
+    } catch {
       alert("Failed to delete user");
     }
   };
@@ -258,7 +258,7 @@ export default function SWRPage() {
       );
       setIsDialogOpen(false);
       setEditingUser(null);
-    } catch (error) {
+    } catch {
       alert("Failed to update user");
     }
   };
@@ -270,7 +270,7 @@ export default function SWRPage() {
       setIsAddDialogOpen(false);
       setAddName("");
       setAddEmail("");
-    } catch (error) {
+    } catch {
       alert("Failed to add user");
     }
   };

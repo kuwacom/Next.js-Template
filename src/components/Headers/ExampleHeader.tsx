@@ -4,15 +4,27 @@ import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor } from "lucide-react";
 import * as Switch from "@radix-ui/react-switch";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+function subscribe() {
+  return () => {};
+}
+
+function getClientSnapshot() {
+  return true;
+}
+
+function getServerSnapshot() {
+  return false;
+}
 
 export function ExampleHeader() {
   const { theme, setTheme, systemTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot
+  );
 
   const current = theme === "system" ? systemTheme : theme;
 
