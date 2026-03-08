@@ -1,6 +1,5 @@
 "use client";
 
-import { apiFetcher } from "@/api/fetcher";
 import { SWRConfig } from "swr";
 
 export default function SWRProvider({
@@ -11,7 +10,6 @@ export default function SWRProvider({
   return (
     <SWRConfig
       value={{
-        fetcher: apiFetcher,
         dedupingInterval: 2000,
         revalidateOnFocus: true,
         shouldRetryOnError: false,

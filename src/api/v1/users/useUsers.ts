@@ -1,78 +1,29 @@
-import {
-  DeleteUserResponse,
-  User,
-  UserRequest,
-  UserResponse,
-} from "@/types/v1/api";
-import useSWR, { mutate } from "swr";
+"use client";
+
+import { useAuth } from "@/hooks/useAuth";
 import { apiClient } from "@/api/apiClient";
-import { apiFetcher } from "@/api/fetcher";
+import { User } from "@/types/v1/api";
+import useSWR from "swr";
+
+export const usersListKey = (authVersion: number) =>
+  ["users", "list", authVersion] as const;
+
+async function getUsersRequest(): Promise<User[]> {
+  const res = await apiClient.get<User[]>("/users");
+  return res.data ?? [];
+}
 
 export function useUsers() {
-  const { data, error, isLoading, mutate } = useSWR<User[]>("/users", {
+  const { authVersion } = useAuth();
+  const swr = useSWR<User[]>(usersListKey(authVersion), () => getUsersRequest(), {
     revalidateIfStale: true,
     revalidateOnMount: true,
     revalidateOnReconnect: true,
   });
 
   return {
-    users: data ?? [],
-    isLoading,
-    isError: error,
-    mutate,
+    ...swr,
+    users: swr.data ?? [],
+    isError: swr.error,
   };
-}
-
-export function useUser(userId: string | null) {
-  const { data, error, isLoading } = useSWR<User>(
-    userId ? `/users/${userId}` : null,
-    apiFetcher,
-    {
-      revalidateIfStale: true,
-      revalidateOnMount: true,
-      revalidateOnReconnect: true,
-    }
-  );
-
-  return {
-    user: data,
-    isLoading,
-    isError: error,
-    mutate: (data?: User) => mutate(`/users/${userId}`, data, false),
-  };
-}
-
-export async function addUser(user: UserRequest): Promise<User> {
-  try {
-    const res = await apiClient.post<UserResponse>("/users", user);
-    // Optionally update the cache for the users list
-    mutate("/users");
-    return res.data!;
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function updateUser(
-  userId: string,
-  user: UserRequest
-): Promise<User> {
-  try {
-    const res = await apiClient.put<UserResponse>(`/users/${userId}`, user);
-    // Update the cache for this user
-    mutate(`/users/${userId}`, res.data, false);
-    return res.data!;
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function deleteUser(userId: string): Promise<void> {
-  try {
-    await apiClient.delete<DeleteUserResponse>(`/users/${userId}`);
-    // Remove from cache
-    mutate(`/users/${userId}`, null, false);
-  } catch (error) {
-    throw error;
-  }
 }

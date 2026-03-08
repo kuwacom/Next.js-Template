@@ -1,0 +1,33 @@
+"use client";
+
+import { apiClient } from "@/api/apiClient";
+import { useAuth } from "@/hooks/useAuth";
+import { User } from "@/types/v1/api";
+import useSWR from "swr";
+
+export const userDetailKey = (userId: string, authVersion: number) =>
+  ["users", "detail", userId, authVersion] as const;
+
+async function getUserRequest(userId: string): Promise<User> {
+  const res = await apiClient.get<User>(`/users/${userId}`);
+  return res.data!;
+}
+
+export function useUser(userId: string | null) {
+  const { authVersion } = useAuth();
+  const swr = useSWR<User>(
+    userId ? userDetailKey(userId, authVersion) : null,
+    () => getUserRequest(userId!),
+    {
+      revalidateIfStale: true,
+      revalidateOnMount: true,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  return {
+    ...swr,
+    user: swr.data,
+    isError: swr.error,
+  };
+}

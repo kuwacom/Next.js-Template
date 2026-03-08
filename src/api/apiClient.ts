@@ -1,4 +1,5 @@
 import logger from "@/services/logger";
+import { authStore } from "@/stores/authStore";
 import { paths } from "@/types/v1/openapi";
 import createClient from "openapi-fetch";
 
@@ -40,15 +41,7 @@ export class APIClient {
 
   // ユーザートークン取得
   private getUserToken(): string | null {
-    // 現状は localStorage から取得する実装
-    // あとで useAuth から取得する形に変更
-    try {
-      return typeof window !== "undefined"
-        ? localStorage.getItem("token")
-        : null;
-    } catch {
-      return null;
-    }
+    return authStore.getSnapshot().accessToken;
   }
 
   // 汎用リクエストメソッド

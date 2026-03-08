@@ -2,11 +2,11 @@
 
 import React, { Suspense, useState } from "react";
 import {
+  useAddUser,
+  useDeleteUser,
+  useUpdateUser,
   useUsers,
-  updateUser,
-  deleteUser,
-  addUser,
-} from "@/api/v1/users/useUsers";
+} from "@/api/v1/users";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -210,6 +210,9 @@ export default function SWRPage() {
   // mutate をここで使いたいので useUsers() を呼んでおく
   // （suspense: true のため、この呼び出し自体は Suspense の挙動に影響することに注意）
   const { mutate } = useUsers();
+  const { addUser } = useAddUser();
+  const { updateUser } = useUpdateUser();
+  const { deleteUser } = useDeleteUser();
 
   // 編集ダイアログ用 state
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -234,9 +237,6 @@ export default function SWRPage() {
     if (!confirm("Are you sure you want to delete this user?")) return;
     try {
       await deleteUser(userId.toString());
-      mutate((current) => current?.filter((u) => u.id !== userId), {
-        revalidate: true,
-      });
     } catch {
       alert("Failed to delete user");
     }
@@ -245,17 +245,13 @@ export default function SWRPage() {
   const handleSave = async () => {
     if (!editingUser) return;
     try {
-      const updatedUser = await updateUser(editingUser.id.toString(), {
-        name,
-        email,
+      await updateUser({
+        userId: editingUser.id.toString(),
+        user: {
+          name,
+          email,
+        },
       });
-      mutate(
-        (current) =>
-          current?.map((u) => (u.id === updatedUser.id ? updatedUser : u)),
-        {
-          revalidate: true,
-        }
-      );
       setIsDialogOpen(false);
       setEditingUser(null);
     } catch {
@@ -265,8 +261,7 @@ export default function SWRPage() {
 
   const handleAddUser = async () => {
     try {
-      const newUser = await addUser({ name: addName, email: addEmail });
-      mutate((current) => [...(current || []), newUser], { revalidate: true });
+      await addUser({ name: addName, email: addEmail });
       setIsAddDialogOpen(false);
       setAddName("");
       setAddEmail("");
