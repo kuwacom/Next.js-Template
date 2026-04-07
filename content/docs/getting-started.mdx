@@ -1,0 +1,48 @@
+export const metadata = {
+  title: "MDX 記事システムの始め方",
+  description: "このテンプレートで記事を追加する基本フローをまとめたサンプルです。",
+  publishedAt: "2026-03-14",
+  tags: ["MDX", "Next.js", "Template"],
+}
+
+# MDX 記事システムの始め方
+
+このテンプレートでは、`content/docs/` ディレクトリに置いた `.mdx` ファイルが `/docs/*` に公開されます。
+
+<Callout variant="tip" title="最短フロー">
+  `content/docs/your-article.mdx` を追加し、先頭で `metadata` を export すれば一覧にも詳細ページにも反映されます。
+</Callout>
+
+## ルーティングの考え方
+
+- `content/docs/getting-started.mdx` → `/docs/getting-started`
+- `content/docs/guides/writing-docs.mdx` → `/docs/guides/writing-docs`
+
+## metadata を書く
+
+各記事の先頭では、次の形式でメタデータを export します。
+
+```tsx
+export const metadata = {
+  title: "記事タイトル",
+  description: "一覧やメタタグに使う説明文",
+  publishedAt: "2026-03-14",
+  tags: ["MDX", "Docs"],
+}
+```
+
+## MDX コンポーネント
+
+標準の Markdown に加えて、いくつかの React コンポーネントもそのまま使えます。
+
+<Badge variant="secondary">Badge</Badge>
+
+<Callout variant="info" title="使えるもの">
+  現在は `Badge` と `Callout` をグローバル登録しています。必要になったら `mdx-components.tsx` に追加できます。
+</Callout>
+
+## 次にやること
+
+1. `content/docs/` に新しい `.mdx` を追加する
+2. `metadata` を export する
+3. ブラウザで `/docs` を開く

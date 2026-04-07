@@ -16,6 +16,7 @@ themeシステムも組み込まれています
 - **SWR / SWRMutation** を使ったエンドポイント単位の hook 構成
 - **shadcn/ui + Tailwind CSS v4** による UI 実装
 - **next-themes** によるライト / ダーク / システムテーマ切り替え
+- **`content/docs/` + `@next/mdx`** による記事システム
 - **`src/proxy.ts`** による API 向け CORS サンプル実装
 
 ## セットアップ
@@ -76,6 +77,7 @@ ${NEXT_PUBLIC_API_URL}/${NEXT_PUBLIC_API_VERSION}
 src/
 ├─ app/
 │  ├─ api/v1/users/           Route Handler
+│  ├─ docs/                   `/docs/*` 配下のルート
 │  ├─ page.tsx                UI コンポーネントのデモ
 │  └─ swr/page.tsx            SWR CRUD デモ
 ├─ api/
@@ -96,7 +98,46 @@ src/
 
 openapi/
 └─ v1.yaml                    OpenAPI 定義
+
+content/docs/
+├─ getting-started.mdx        MDX 記事サンプル
+└─ guides/writing-docs.mdx    ネスト記事サンプル
+
+mdx-components.tsx            MDX 共通コンポーネント定義
 ```
+
+## MDX 記事システム
+
+- 記事ファイルは `content/docs/` に配置します
+- URL は `/docs/*` にルーティングされます
+  - `content/docs/getting-started.mdx` → `/docs/getting-started`
+  - `content/docs/guides/writing-docs.mdx` → `/docs/guides/writing-docs`
+- `.mdx` は `@next/mdx` によって Next.js のビルド時にコンパイルされます
+- 各記事の先頭で `metadata` を export してください
+
+```mdx
+export const metadata = {
+  title: "記事タイトル",
+  description: "一覧とメタタグに使う説明文",
+  publishedAt: "2026-03-14",
+  tags: ["MDX", "Docs"],
+  draft: false,
+}
+
+# 見出し
+```
+
+- `draft: true` にすると一覧表示と公開ルートから除外されます
+- グローバル MDX コンポーネントは `mdx-components.tsx` で追加できます
+
+### MDX プラグイン
+
+- `remark-gfm` GitHub Flavored Markdown
+- `remark-math` + `rehype-katex` TeX 数式
+- `@mapbox/rehype-prism` コードブロックのシンタックスハイライト
+- `rehype-slug` 見出しに id を付与
+- `remark-toc` 目次の生成
+- `remark-breaks` 改行の反映
 
 ## API 層の構成
 

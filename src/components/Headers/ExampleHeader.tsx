@@ -1,10 +1,14 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor } from "lucide-react";
 import * as Switch from "@radix-ui/react-switch";
 import { motion } from "framer-motion";
 import { useSyncExternalStore } from "react";
+
+import { cn } from "@/lib/utils";
 
 function subscribe() {
   return () => {};
@@ -20,6 +24,7 @@ function getServerSnapshot() {
 
 export function ExampleHeader() {
   const { theme, setTheme, systemTheme } = useTheme();
+  const pathname = usePathname();
   const mounted = useSyncExternalStore(
     subscribe,
     getClientSnapshot,
@@ -36,9 +41,39 @@ export function ExampleHeader() {
       className="fixed top-0 left-0 w-full backdrop-blur-md bg-background/60 border-b border-border z-50"
     >
       <div className="flex items-center justify-between px-6 py-3 max-w-6xl mx-auto">
-        <h1 className="text-lg font-semibold tracking-tight text-foreground">
-          🌗 Next UI Theme Demo
-        </h1>
+        <div className="flex items-center gap-6">
+          <Link
+            href="/"
+            className="text-lg font-semibold tracking-tight text-foreground"
+          >
+            🌗 Next.js Template
+          </Link>
+
+          <nav className="hidden items-center gap-2 md:flex">
+            {[
+              { href: "/", label: "Home" },
+              { href: "/docs", label: "Docs" },
+            ].map((item) => {
+              const isActive =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted",
+                    isActive ? "bg-muted text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
         <div className="flex items-center gap-4">
           {/* Light */}

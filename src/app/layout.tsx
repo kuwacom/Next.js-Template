@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import "katex/dist/katex.min.css"; // KaTeXのスタイル
+import "prismjs/themes/prism-tomorrow.css"; // prismシンタックスハイライトのテーマ
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ExampleHeader } from "@/components/Headers/ExampleHeader";

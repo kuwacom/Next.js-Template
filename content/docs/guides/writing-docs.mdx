@@ -1,0 +1,32 @@
+export const metadata = {
+  title: "記事追加の作法",
+  description: "ネストしたパスで記事を管理するためのサンプルです。",
+  publishedAt: "2026-03-13",
+  tags: ["Guides", "Authoring"],
+}
+
+# 記事追加の作法
+
+`content/docs/` 配下ではサブディレクトリも使えます。カテゴリごとに整理したい場合は、普通のフォルダ構成で問題ありません。
+
+## おすすめの運用
+
+- `content/docs/guides/` にガイド記事を置く
+- `content/docs/reference/` にリファレンス記事を置く
+- slug はファイル名ベースで自動生成する
+
+## 書式の例
+
+通常の Markdown 構文はそのまま使えます。
+
+```ts
+export async function generateStaticParams() {
+  return [{ slug: ["guides", "writing-docs"] }]
+}
+```
+
+> コードブロック、引用、リストなどはそのまま整形されます。
+
+<Callout variant="warn" title="補足">
+  `draft: true` を `metadata` に追加すると一覧や公開ルートから除外できます。
+</Callout>

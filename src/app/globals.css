@@ -122,3 +122,77 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .mdx-content {
+    @apply text-base leading-7 text-foreground;
+  }
+
+  .mdx-content > :first-child {
+    @apply mt-0;
+  }
+
+  .mdx-content > * + * {
+    @apply mt-6;
+  }
+
+  .mdx-content :where(h1, h2, h3, h4) {
+    @apply scroll-mt-24 font-semibold tracking-tight text-foreground;
+  }
+
+  .mdx-content :where(h1) {
+    @apply text-4xl;
+  }
+
+  .mdx-content :where(h2) {
+    @apply mt-10 border-t border-border pt-8 text-2xl;
+  }
+
+  .mdx-content :where(h3) {
+    @apply mt-8 text-xl;
+  }
+
+  .mdx-content :where(p, li) {
+    @apply text-base leading-7 text-foreground/90;
+  }
+
+  .mdx-content :where(ul, ol) {
+    @apply ml-6 space-y-2;
+  }
+
+  .mdx-content :where(ul) {
+    @apply list-disc;
+  }
+
+  .mdx-content :where(ol) {
+    @apply list-decimal;
+  }
+
+  .mdx-content :where(a) {
+    @apply font-medium text-primary underline underline-offset-4;
+  }
+
+  .mdx-content :where(blockquote) {
+    @apply rounded-r-lg border-l-4 border-border bg-muted/40 px-4 py-3 italic text-muted-foreground;
+  }
+
+  .mdx-content :where(hr) {
+    @apply my-8 border-border;
+  }
+
+  .mdx-content :where(pre) {
+    @apply overflow-x-auto rounded-xl border border-border bg-card px-4 py-4 text-sm leading-6 shadow-sm;
+  }
+
+  .mdx-content :where(pre code) {
+    @apply bg-transparent p-0 text-inherit;
+  }
+
+  .mdx-content :where(:not(pre) > code) {
+    @apply rounded-md bg-muted px-1.5 py-0.5 font-mono text-sm;
+  }
+
+  .mdx-content :where(img) {
+    @apply rounded-xl border border-border;
+  }
+}
