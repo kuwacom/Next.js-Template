@@ -1,63 +1,69 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import { notFound } from "next/navigation"
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
-import { MDXContent } from "@/components/docs/MDXContent"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { MDXContent } from "@/components/docs/MDXContent";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   buildMDXHref,
   buildMDXPageMetadata,
   getMDXBySlug,
   getMDXStaticParams,
-} from "@/lib/mdx"
+} from "@/lib/mdx";
 
 type DocPageProps = {
   params: Promise<{
-    slug: string[]
-  }>
-}
+    slug: string[];
+  }>;
+};
 
 const dateFormatter = new Intl.DateTimeFormat("ja-JP", {
   dateStyle: "long",
-})
+});
 
-export const dynamicParams = false
+export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  return getMDXStaticParams()
+  return getMDXStaticParams();
 }
 
-export async function generateMetadata({ params }: DocPageProps): Promise<Metadata> {
-  const { slug } = await params
-  const mdxPage = await getMDXBySlug(slug)
+export async function generateMetadata({
+  params,
+}: DocPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const mdxPage = await getMDXBySlug(slug);
 
   if (!mdxPage) {
     return {
       title: "Not Found",
-    }
+    };
   }
 
-  return buildMDXPageMetadata(mdxPage)
+  return buildMDXPageMetadata(mdxPage);
 }
 
 export default async function DocDetailPage({ params }: DocPageProps) {
-  const { slug } = await params
-  const mdxPage = await getMDXBySlug(slug)
+  const { slug } = await params;
+  const mdxPage = await getMDXBySlug(slug);
 
   if (!mdxPage) {
-    notFound()
+    notFound();
   }
 
   const breadcrumbs = mdxPage.slug.map((segment, index) => ({
     label: segment,
     href: buildMDXHref(mdxPage.slug.slice(0, index + 1)),
-  }))
+  }));
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8 pb-16 pt-4">
       <div className="flex items-center justify-between gap-4">
-        <Button asChild variant="ghost" className="px-0 text-muted-foreground hover:bg-transparent">
+        <Button
+          asChild
+          variant="ghost"
+          className="px-0 text-muted-foreground hover:bg-transparent"
+        >
           <Link href="/docs">← 記事一覧へ戻る</Link>
         </Button>
       </div>
@@ -84,7 +90,9 @@ export default async function DocDetailPage({ params }: DocPageProps) {
           </div>
 
           <div className="space-y-3">
-            <h1 className="text-4xl font-semibold tracking-tight">{mdxPage.title}</h1>
+            <h1 className="text-4xl font-semibold tracking-tight">
+              {mdxPage.title}
+            </h1>
             {mdxPage.description ? (
               <p className="text-base leading-7 text-muted-foreground">
                 {mdxPage.description}
@@ -106,5 +114,5 @@ export default async function DocDetailPage({ params }: DocPageProps) {
         <mdxPage.Content />
       </MDXContent>
     </div>
-  )
+  );
 }

@@ -101,7 +101,9 @@ openapi/
 
 content/docs/
 ├─ getting-started.mdx        MDX 記事サンプル
-└─ guides/writing-docs.mdx    ネスト記事サンプル
+└─ guides/
+   ├─ index.mdx               フォルダ index サンプル
+   └─ writing-docs.mdx        ネスト記事サンプル
 
 mdx-components.tsx            MDX 共通コンポーネント定義
 ```
@@ -111,7 +113,9 @@ mdx-components.tsx            MDX 共通コンポーネント定義
 - 記事ファイルは `content/docs/` に配置します
 - URL は `/docs/*` にルーティングされます
   - `content/docs/getting-started.mdx` → `/docs/getting-started`
+  - `content/docs/guides/index.mdx` → `/docs/guides`
   - `content/docs/guides/writing-docs.mdx` → `/docs/guides/writing-docs`
+- 各フォルダに `index.mdx` を置くと、そのフォルダ自身の URL をトップページとして使えます
 - `.mdx` は `@next/mdx` によって Next.js のビルド時にコンパイルされます
 - 各記事の先頭で `metadata` を export してください
 
