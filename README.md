@@ -96,6 +96,8 @@ src/
 
 openapi/
 └─ v1.yaml                    OpenAPI 定義
+
+DESIGN.md                     AI及び人間用のデザイン指示md
 ```
 
 ## API 層の構成
