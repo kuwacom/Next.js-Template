@@ -11,8 +11,10 @@ export const ThemeToggle = () => {
     <button
       aria-label="Toggle theme"
       className={clsx(
-        "rounded-md p-2 transition",
-        isDark ? "bg-slate-800 text-white" : "bg-slate-200 text-black"
+        "rounded-md p-2 transition-colors",
+        isDark
+          ? "bg-secondary text-secondary-foreground hover:bg-accent"
+          : "bg-muted text-foreground hover:bg-accent"
       )}
       onClick={() => setTheme(isDark ? "light" : "dark")}
     >
