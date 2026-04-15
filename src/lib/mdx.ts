@@ -7,9 +7,13 @@ import { cache } from "react";
 import type { ComponentType } from "react";
 import type { MDXComponents } from "mdx/types";
 
+import { routing, type AppLocale } from "@/i18n/routing";
+
 // MDXコンテンツのソース配置先
 // app配下のルーティング実装から切り離して再利用性を高める
-const MDX_SOURCE_DIRECTORY = path.join(process.cwd(), "content", "docs");
+function getMDXSourceDirectory(locale: AppLocale) {
+  return path.join(process.cwd(), "content", "docs", locale);
+}
 
 // MDX1件に必要なメタ情報の標準形
 export type MDXMetadata = {
@@ -29,6 +33,7 @@ export type MDXSummary = MDXMetadata & {
 // 詳細画面向けの完全データ
 // Contentには@next/mdxで変換済みのReact Componentが入る
 export type MDXPage = MDXSummary & {
+  isDirectoryIndex: boolean;
   Content: ComponentType<{
     components?: MDXComponents;
   }>;
@@ -39,6 +44,8 @@ type MDXEntry = {
   slug: string[];
   slugAsPath: string;
   importPath: string;
+  sourceLocale: AppLocale;
+  isDirectoryIndex: boolean;
 };
 
 export type MDXDirectoryIndex = MDXSummary & {
@@ -55,10 +62,22 @@ type MDXModule = {
   metadata?: Partial<MDXMetadata>;
 };
 
+// @next/mdx の制約上、locale を変数にした import は静的解析できない
+// 対応する locale ごとに importer を明示定義してビルド時に解決させる
+const MDX_IMPORTERS: Record<
+  AppLocale,
+  (importPath: string) => Promise<MDXModule>
+> = {
+  en: async (importPath) =>
+    (await import(`@mdx-content/en/${importPath}.mdx`)) as MDXModule,
+  ja: async (importPath) =>
+    (await import(`@mdx-content/ja/${importPath}.mdx`)) as MDXModule,
+};
+
 /**
- * slug の末尾セグメントから、人が読めるフォールバックタイトルを生成します。
+ * slug の末尾セグメントから、人が読めるフォールバックタイトルを生成します
  *
- * `metadata.title` が未指定でも一覧や詳細ページの表示が崩れないようにするために使います。
+ * `metadata.title` が未指定でも一覧や詳細ページの表示が崩れないようにするために使います
  */
 function buildTitleFromSlug(slug: string[]) {
   const lastSegment = slug.at(-1) ?? "untitled";
@@ -71,9 +90,9 @@ function buildTitleFromSlug(slug: string[]) {
 }
 
 /**
- * MDX モジュールが export した `metadata` を、表示に使いやすい標準形へ正規化します。
+ * MDX モジュールが export した `metadata` を、表示に使いやすい標準形へ正規化します
  *
- * 欠損値や型の揺れを吸収し、呼び出し側が個別の null チェックを持たずに済むようにします。
+ * 欠損値や型の揺れを吸収し、呼び出し側が個別の null チェックを持たずに済むようにします
  */
 function normalizeMDXMetadata(
   metadata: Partial<MDXMetadata> | undefined,
@@ -101,7 +120,7 @@ function normalizeMDXMetadata(
 }
 
 /**
- * `content/docs` 配下を再帰走査し、公開対象の MDX エントリ一覧を収集します。
+ * `content/docs/{locale}` 配下を再帰走査し、公開対象の MDX エントリ一覧を収集します
  *
  * - ディレクトリ構造はそのまま URL 用の slug に変換されます
  * - `index.mdx` は `/docs/foo/index` ではなく `/docs/foo` として扱います
@@ -109,6 +128,7 @@ function normalizeMDXMetadata(
  */
 async function walkMDXDirectory(
   directory: string,
+  sourceLocale: AppLocale,
   segments: string[] = [],
 ): Promise<MDXEntry[]> {
   const entries = await fs
@@ -131,7 +151,10 @@ async function walkMDXDirectory(
 
       // サブディレクトリを再帰的に探索し、slugの前半として保持
       if (entry.isDirectory()) {
-        return walkMDXDirectory(absolutePath, [...segments, entry.name]);
+        return walkMDXDirectory(absolutePath, sourceLocale, [
+          ...segments,
+          entry.name,
+        ]);
       }
 
       // mdx以外は記事として扱わない
@@ -147,7 +170,7 @@ async function walkMDXDirectory(
 
       if (slug.length === 0) {
         // app 下でベースページを実装する前提のため
-        // content/docs/index.mdx は現状サポート対象外として一覧から除外する
+        // content/docs/{locale}/index.mdx は現状サポート対象外として一覧から除外する
         return [];
       }
 
@@ -156,6 +179,8 @@ async function walkMDXDirectory(
           slug,
           slugAsPath: slug.join("/"),
           importPath,
+          sourceLocale,
+          isDirectoryIndex: fileSlug === "index" && segments.length > 0,
         },
       ];
     }),
@@ -165,12 +190,12 @@ async function walkMDXDirectory(
 }
 
 /**
- * MDX ファイル走査結果をキャッシュ付きで取得します。
+ * ロケール単位の MDX ファイル走査結果をキャッシュ付きで取得します
  *
- * 同一リクエスト中の重複 I/O を抑えつつ、`slugAsPath` 順に並べて安定した結果を返します。
+ * 同一リクエスト中の重複 I/O を抑えつつ、`slugAsPath` 順に並べて安定した結果を返します
  */
-const getMDXEntries = cache(async () => {
-  const entries = await walkMDXDirectory(MDX_SOURCE_DIRECTORY);
+const getLocaleMDXEntries = cache(async (locale: AppLocale) => {
+  const entries = await walkMDXDirectory(getMDXSourceDirectory(locale), locale);
 
   return entries.sort((left, right) =>
     left.slugAsPath.localeCompare(right.slugAsPath),
@@ -178,75 +203,131 @@ const getMDXEntries = cache(async () => {
 });
 
 /**
- * `@next/mdx` によってビルド対象になった MDX モジュールを動的 import します。
+ * 要求 locale の記事一覧を取得します
+ *
+ * 翻訳がない slug はデフォルト言語の記事で補完し、翻訳版がある slug はそちらを優先します
+ */
+const getMDXEntries = cache(async (locale: AppLocale) => {
+  const localizedEntries = await getLocaleMDXEntries(locale);
+
+  if (locale === routing.defaultLocale) {
+    return localizedEntries;
+  }
+
+  const fallbackEntries = await getLocaleMDXEntries(routing.defaultLocale);
+  // デフォルト言語の一覧を先に入れて未翻訳記事も拾う
+  // 同じ slug に翻訳版があれば後から上書きする
+  const mergedEntries = new Map(
+    fallbackEntries.map((entry) => [entry.slugAsPath, entry]),
+  );
+
+  for (const entry of localizedEntries) {
+    mergedEntries.set(entry.slugAsPath, entry);
+  }
+
+  return Array.from(mergedEntries.values()).sort((left, right) =>
+    left.slugAsPath.localeCompare(right.slugAsPath),
+  );
+});
+
+/**
+ * `@next/mdx` によってビルド対象になった MDX モジュールを動的 import します
  *
  * `slugAsPath` ではなく実ファイル基準の `importPath` を受け取ることで、
- * `guides/index.mdx` のようなファイルも `/docs/guides` として公開できます。
+ * `guides/index.mdx` のようなファイルも `/docs/guides` として公開できます
  */
 const importMDXModule = cache(
-  async (importPath: string): Promise<MDXModule> => {
-    return (await import(`@mdx-content/${importPath}.mdx`)) as MDXModule;
+  async (
+    sourceLocale: AppLocale,
+    importPath: string,
+  ): Promise<MDXModule | null> => {
+    try {
+      return await MDX_IMPORTERS[sourceLocale](importPath);
+    } catch {
+      if (sourceLocale === routing.defaultLocale) {
+        return null;
+      }
+
+      try {
+        // 翻訳がまだない記事は英語版へフォールバックする
+        return await MDX_IMPORTERS[routing.defaultLocale](importPath);
+      } catch {
+        return null;
+      }
+    }
   },
 );
 
 /**
- * 1 件の MDX エントリを読み込み、画面表示用の完全なページデータへ変換します。
+ * 1 件の MDX エントリを読み込み、画面表示用の完全なページデータへ変換します
  *
- * 本文コンポーネントと正規化済み metadata をここで結合します。
+ * 本文コンポーネントと正規化済み metadata をここで結合します
  */
-const loadMDXPage = cache(async (entry: MDXEntry): Promise<MDXPage> => {
-  const mdxModule = await importMDXModule(entry.importPath);
+const loadMDXPage = cache(async (entry: MDXEntry): Promise<MDXPage | null> => {
+  const mdxModule = await importMDXModule(entry.sourceLocale, entry.importPath);
+
+  if (!mdxModule) {
+    return null;
+  }
 
   return {
     ...normalizeMDXMetadata(mdxModule.metadata, entry.slug),
     slug: entry.slug,
     slugAsPath: entry.slugAsPath,
+    isDirectoryIndex: entry.isDirectoryIndex,
     Content: mdxModule.default,
   };
 });
 
 /**
- * 公開対象の MDX 記事一覧を取得します。
+ * 公開対象の MDX 記事一覧を取得します
  *
  * - `draft: true` は除外します
  * - `publishedAt` の降順で並べます
  * - 同日の場合はタイトル順で安定化します
  */
-export const getAllMDXContent = cache(async (): Promise<MDXSummary[]> => {
-  const entries = await getMDXEntries();
-  const mdxPages = await Promise.all(
-    entries.map((entry) => loadMDXPage(entry)),
-  );
+export const getAllMDXContent = cache(
+  async (locale: AppLocale): Promise<MDXSummary[]> => {
+    const entries = await getMDXEntries(locale);
+    const mdxPages = (
+      await Promise.all(entries.map((entry) => loadMDXPage(entry)))
+    ).filter((mdxPage): mdxPage is MDXPage => mdxPage !== null);
 
-  return mdxPages
-    .filter((mdxPage) => !mdxPage.draft)
-    .sort((left, right) => {
-      const byDate =
-        new Date(right.publishedAt).getTime() -
-        new Date(left.publishedAt).getTime();
+    return mdxPages
+      .filter((mdxPage) => !mdxPage.draft)
+      .sort((left, right) => {
+        const byDate =
+          new Date(right.publishedAt).getTime() -
+          new Date(left.publishedAt).getTime();
 
-      return byDate !== 0 ? byDate : left.title.localeCompare(right.title);
-    })
-    .map((mdxPage) => ({
-      title: mdxPage.title,
-      description: mdxPage.description,
-      publishedAt: mdxPage.publishedAt,
-      tags: mdxPage.tags,
-      draft: mdxPage.draft,
-      slug: mdxPage.slug,
-      slugAsPath: mdxPage.slugAsPath,
-    }));
-});
+        return byDate !== 0
+          ? byDate
+          : left.title.localeCompare(right.title, locale);
+      })
+      .map((mdxPage) => ({
+        title: mdxPage.title,
+        description: mdxPage.description,
+        publishedAt: mdxPage.publishedAt,
+        tags: mdxPage.tags,
+        draft: mdxPage.draft,
+        slug: mdxPage.slug,
+        slugAsPath: mdxPage.slugAsPath,
+      }));
+  },
+);
 
 /**
- * URL slug から単一の MDX 記事を取得します。
+ * URL slug から単一の MDX 記事を取得します
  *
- * 記事が存在しない場合、または `draft` の場合は `null` を返します。
- * ルーティング側で `notFound()` に委譲したいときに使います。
+ * 記事が存在しない場合、または `draft` の場合は `null` を返します
+ * ルーティング側で `notFound()` に委譲したいときに使います
  */
-export async function getMDXBySlug(slug: string[]): Promise<MDXPage | null> {
+export async function getMDXBySlug(
+  locale: AppLocale,
+  slug: string[],
+): Promise<MDXPage | null> {
   const slugAsPath = slug.join("/");
-  const matchingEntry = (await getMDXEntries()).find(
+  const matchingEntry = (await getMDXEntries(locale)).find(
     (entry) => entry.slugAsPath === slugAsPath,
   );
 
@@ -256,69 +337,73 @@ export async function getMDXBySlug(slug: string[]): Promise<MDXPage | null> {
 
   const mdxPage = await loadMDXPage(matchingEntry);
 
-  return mdxPage.draft ? null : mdxPage;
+  return mdxPage && !mdxPage.draft ? mdxPage : null;
 }
 
 /**
- * フォルダ配下の `index.mdx` だけを抽出し、フォルダトップページとして扱いやすい形で返します。
+ * フォルダ配下の `index.mdx` だけを抽出し、フォルダトップページとして扱いやすい形で返します
  *
- * たとえば `content/docs/guides/index.mdx` は `/docs/guides` 用の index 情報として取得できます。
+ * たとえば `content/docs/{locale}/guides/index.mdx` は `/docs/guides` 用の index 情報として取得できます
  */
 export const getMDXDirectoryIndexes = cache(
-  async (): Promise<MDXDirectoryIndex[]> => {
-    const mdxPages = await getAllMDXContent();
+  async (locale: AppLocale): Promise<MDXDirectoryIndex[]> => {
+    const entries = await getMDXEntries(locale);
+    const mdxPages = (
+      await Promise.all(entries.map((entry) => loadMDXPage(entry)))
+    ).filter(
+      (mdxPage): mdxPage is MDXPage => mdxPage !== null && !mdxPage.draft,
+    );
 
-    return mdxPages
-      .map((mdxPage) => {
-        const fileName = mdxPage.slugAsPath.split("/").at(-1);
-        const isDirectoryIndex = fileName === "index";
-        // guides/index.mdx のようなファイルから、フォルダ自体のURL情報を作る
-        const directorySlug = isDirectoryIndex
-          ? mdxPage.slug
-          : mdxPage.slug.slice(0, -1);
+    return (
+      mdxPages
+        .filter((mdxPage) => mdxPage.isDirectoryIndex)
+        .map((mdxPage) => {
+          // guides/index.mdx のようなファイルから、フォルダ自体のURL情報を作る
+          const directorySlug = mdxPage.slug;
 
-        return {
-          ...mdxPage,
-          directorySlug,
-          directoryPath: directorySlug.join("/"),
-        };
-      })
-      .filter((mdxPage): mdxPage is MDXDirectoryIndex => {
+          return {
+            title: mdxPage.title,
+            description: mdxPage.description,
+            publishedAt: mdxPage.publishedAt,
+            tags: mdxPage.tags,
+            draft: mdxPage.draft,
+            slug: mdxPage.slug,
+            slugAsPath: mdxPage.slugAsPath,
+            directorySlug,
+            directoryPath: directorySlug.join("/"),
+          };
+        })
         // フォルダ配下の index.mdx だけを「フォルダ index」として扱う
-        return (
-          mdxPage.directorySlug.length > 0 &&
-          mdxPage.slugAsPath.endsWith("/index")
-        );
-      })
-      .sort((left, right) =>
-        left.directoryPath.localeCompare(right.directoryPath),
-      );
+        .sort((left, right) =>
+          left.directoryPath.localeCompare(right.directoryPath),
+        )
+    );
   },
 );
 
 /**
- * App Router の `generateStaticParams` 用に、公開対象の記事 slug 一覧を返します。
+ * App Router の `generateStaticParams` 用に、公開対象の記事 slug 一覧を返します
  */
-export async function getMDXStaticParams() {
-  const mdxPages = await getAllMDXContent();
+export async function getMDXStaticParams(locale: AppLocale) {
+  const mdxPages = await getAllMDXContent(locale);
 
   return mdxPages.map((mdxPage) => ({ slug: mdxPage.slug }));
 }
 
 /**
- * slug 配列から docs 配下の公開 URL を組み立てます。
+ * slug 配列から docs 配下の公開 URL を組み立てます
  *
  * @param slug URL に変換したい slug セグメント配列
- * @param basePath ルートパス。既定値は `/docs`
+ * @param basePath ルートパス 既定値は `/docs`
  */
 export function buildMDXHref(slug: string[], basePath: string = "/docs") {
-  return `${basePath}/${slug.join("/")}`;
+  return slug.length > 0 ? `${basePath}/${slug.join("/")}` : basePath;
 }
 
 /**
- * MDX 記事から Next.js の `Metadata` を生成します。
+ * MDX 記事から Next.js の `Metadata` を生成します
  *
- * 詳細ページごとの title / description を統一ルールで組み立てたいときに使います。
+ * 詳細ページごとの title / description を統一ルールで組み立てたいときに使います
  */
 export function buildMDXPageMetadata(
   mdxSummary: MDXSummary,

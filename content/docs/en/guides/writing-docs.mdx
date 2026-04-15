@@ -1,0 +1,32 @@
+export const metadata = {
+  title: "How to Add Articles",
+  description: "A sample for managing articles in nested paths.",
+  publishedAt: "2026-03-13",
+  tags: ["Guides", "Authoring"],
+}
+
+# How to Add Articles
+
+Subdirectories are supported under `content/docs/`. If you want to organize content by category, a normal folder structure is enough.
+
+## Recommended organization
+
+- Put guide articles in `content/docs/guides/`
+- Put reference articles in `content/docs/reference/`
+- Slugs are generated automatically from file names
+
+## Example format
+
+Standard Markdown syntax works as-is.
+
+```ts
+export async function generateStaticParams() {
+  return [{ slug: ["guides", "writing-docs"] }]
+}
+```
+
+> Code blocks, blockquotes, and lists are formatted automatically.
+
+<Callout variant="warn" title="Note">
+  If you add `draft: true` to `metadata`, the article is excluded from indexes and public routes.
+</Callout>

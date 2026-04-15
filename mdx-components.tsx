@@ -1,12 +1,17 @@
 import type { MDXComponents } from "mdx/types"
-import Link from "next/link"
 import type { ComponentPropsWithoutRef } from "react"
 
+import { Link } from "@/i18n/navigation"
 import { Callout } from "@/components/docs/Callout"
 import { Badge } from "@/components/ui/badge"
 
 function MdxLink({ href = "", ...props }: ComponentPropsWithoutRef<"a">) {
-  const isInternalLink = href.startsWith("/") || href.startsWith("#")
+  const isAnchorLink = href.startsWith("#")
+  const isInternalLink = href.startsWith("/")
+
+  if (isAnchorLink) {
+    return <a href={href} {...props} />
+  }
 
   if (isInternalLink) {
     return <Link href={href} {...props} />

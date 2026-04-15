@@ -1,0 +1,48 @@
+export const metadata = {
+  title: "Getting Started with the MDX Docs System",
+  description: "A sample walkthrough of the basic flow for adding articles in this template.",
+  publishedAt: "2026-03-14",
+  tags: ["MDX", "Next.js", "Template"],
+}
+
+# Getting Started with the MDX Docs System
+
+In this template, `.mdx` files placed under `content/docs/` are published to `/docs/*`.
+
+<Callout variant="tip" title="Fastest workflow">
+  Add `content/docs/your-article.mdx` and export `metadata` at the top. It will appear in both the index and the detail page automatically.
+</Callout>
+
+## How routing works
+
+- `content/docs/getting-started.mdx` -> `/docs/getting-started`
+- `content/docs/guides/writing-docs.mdx` -> `/docs/guides/writing-docs`
+
+## Writing metadata
+
+At the top of each article, export metadata like this:
+
+```tsx
+export const metadata = {
+  title: "Article title",
+  description: "Description used in listings and meta tags",
+  publishedAt: "2026-03-14",
+  tags: ["MDX", "Docs"],
+}
+```
+
+## MDX components
+
+In addition to standard Markdown, you can use a few React components directly.
+
+<Badge variant="secondary">Badge</Badge>
+
+<Callout variant="info" title="Available components">
+  `Badge` and `Callout` are registered globally right now. If needed, you can add more in `mdx-components.tsx`.
+</Callout>
+
+## Next steps
+
+1. Add a new `.mdx` file under `content/docs/`
+2. Export `metadata`
+3. Open `/docs` in the browser

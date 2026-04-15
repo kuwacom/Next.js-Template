@@ -1,0 +1,85 @@
+{
+  "site": {
+    "title": "Next.js Template",
+    "description": "A modern Next.js starter with localized routes and MDX docs."
+  },
+  "nav": {
+    "home": "Home",
+    "docs": "Docs",
+    "swr": "SWR Demo"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "switch": "Dark"
+  },
+  "localeSwitcher": {
+    "label": "Language",
+    "en": "EN",
+    "ja": "JA"
+  },
+  "home": {
+    "metaTitle": "Home",
+    "metaDescription": "UI samples for the template homepage.",
+    "buttonsTitle": "Buttons",
+    "buttonsDescription": "Button variations from shadcn/ui.",
+    "inputsTitle": "Inputs",
+    "emailLabel": "Email",
+    "emailPlaceholder": "example@email.com",
+    "badgesTitle": "Badges",
+    "tabsTitle": "Tabs",
+    "default": "Default",
+    "secondary": "Secondary",
+    "outline": "Outline",
+    "ghost": "Ghost",
+    "destructive": "Destructive",
+    "tab1": "Tab 1",
+    "tab2": "Tab 2",
+    "tab1Content": "Content 1",
+    "tab2Content": "Content 2"
+  },
+  "docs": {
+    "metaTitle": "Docs",
+    "metaDescription": "Browse localized MDX-based articles.",
+    "badge": "MDX Docs",
+    "title": "Article System",
+    "description": "MDX files under `content/docs/{locale}/` are automatically listed and routed to `/docs/*`.",
+    "noArticles": "No articles yet",
+    "noArticlesDescription": "Add `.mdx` files under `content/docs/{locale}/` and they will appear here.",
+    "readArticle": "Read Article",
+    "openIndex": "Open Index",
+    "articleList": "Article List",
+    "articleListDescription": "Regular articles and folder indexes are shown together.",
+    "folderIndex": "Folder Index",
+    "folderIndexDescription": "Place `content/docs/{locale}/**/index.mdx` to publish it as the top page for that folder."
+  },
+  "swr": {
+    "usersList": "Users List",
+    "refresh": "Refresh",
+    "addUser": "Add User",
+    "editUser": "Edit User",
+    "name": "Name",
+    "email": "Email",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "add": "Add",
+    "failedToLoadUsers": "Failed to load users.",
+    "retry": "Retry",
+    "reloadPage": "Reload page",
+    "loadingUserCard": "Loading user card",
+    "deleteConfirm": "Are you sure you want to delete this user?",
+    "deleteFailed": "Failed to delete user",
+    "updateFailed": "Failed to update user",
+    "addFailed": "Failed to add user"
+  },
+  "article": {
+    "metaSuffix": "Docs",
+    "notFound": "Not Found",
+    "backToDocs": "Back to articles",
+    "breadcrumbRoot": "docs",
+    "badge": "MDX Article"
+  }
+}

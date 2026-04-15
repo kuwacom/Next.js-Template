@@ -1,13 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor } from "lucide-react";
 import * as Switch from "@radix-ui/react-switch";
 import { motion } from "framer-motion";
 import { useSyncExternalStore } from "react";
 
+import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 function subscribe() {
@@ -23,6 +24,9 @@ function getServerSnapshot() {
 }
 
 export function ExampleHeader() {
+  const tNav = useTranslations("nav");
+  const tSite = useTranslations("site");
+  const tTheme = useTranslations("theme");
   const { theme, setTheme, systemTheme } = useTheme();
   const pathname = usePathname();
   const mounted = useSyncExternalStore(
@@ -46,13 +50,14 @@ export function ExampleHeader() {
             href="/"
             className="text-lg font-semibold tracking-tight text-foreground"
           >
-            🌗 Next.js Template
+            🌗 {tSite("title")}
           </Link>
 
           <nav className="hidden items-center gap-2 md:flex">
             {[
-              { href: "/", label: "Home" },
-              { href: "/docs", label: "Docs" },
+              { href: "/", label: tNav("home") },
+              { href: "/docs", label: tNav("docs") },
+              { href: "/swr", label: tNav("swr") },
             ].map((item) => {
               const isActive =
                 item.href === "/"
@@ -76,12 +81,15 @@ export function ExampleHeader() {
         </div>
 
         <div className="flex items-center gap-4">
+          <LocaleSwitcher />
+
           {/* Light */}
           <button
             onClick={() => mounted && setTheme("light")}
             className={`p-2 rounded-full hover:bg-muted transition ${
               mounted && current === "light" ? "bg-muted" : ""
             }`}
+            aria-label={tTheme("light")}
           >
             <Sun size={18} />
           </button>
@@ -92,6 +100,7 @@ export function ExampleHeader() {
             className={`p-2 rounded-full hover:bg-muted transition ${
               mounted && current === "dark" ? "bg-muted" : ""
             }`}
+            aria-label={tTheme("dark")}
           >
             <Moon size={18} />
           </button>
@@ -102,6 +111,7 @@ export function ExampleHeader() {
             className={`p-2 rounded-full hover:bg-muted transition ${
               mounted && theme === "system" ? "bg-muted" : ""
             }`}
+            aria-label={tTheme("system")}
           >
             <Monitor size={18} />
           </button>
@@ -110,7 +120,7 @@ export function ExampleHeader() {
 
           {/* Radix Switch with hydration-safe guard */}
           <label className="flex items-center gap-2 text-sm">
-            <span>Dark</span>
+            <span>{tTheme("switch")}</span>
 
             {mounted && (
               <Switch.Root

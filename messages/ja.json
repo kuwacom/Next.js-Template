@@ -1,0 +1,85 @@
+{
+  "site": {
+    "title": "Next.js Template",
+    "description": "ローカライズ済みルートと MDX ドキュメントを備えた Next.js スターターです。"
+  },
+  "nav": {
+    "home": "ホーム",
+    "docs": "ドキュメント",
+    "swr": "SWR デモ"
+  },
+  "theme": {
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム",
+    "switch": "ダーク"
+  },
+  "localeSwitcher": {
+    "label": "言語",
+    "en": "EN",
+    "ja": "JA"
+  },
+  "home": {
+    "metaTitle": "ホーム",
+    "metaDescription": "テンプレートの UI サンプルを表示します。",
+    "buttonsTitle": "Buttons",
+    "buttonsDescription": "shadcn/ui のボタンバリエーション",
+    "inputsTitle": "Inputs",
+    "emailLabel": "Email",
+    "emailPlaceholder": "example@email.com",
+    "badgesTitle": "Badges",
+    "tabsTitle": "Tabs",
+    "default": "Default",
+    "secondary": "Secondary",
+    "outline": "Outline",
+    "ghost": "Ghost",
+    "destructive": "Destructive",
+    "tab1": "タブ 1",
+    "tab2": "タブ 2",
+    "tab1Content": "内容 1",
+    "tab2Content": "内容 2"
+  },
+  "docs": {
+    "metaTitle": "ドキュメント",
+    "metaDescription": "ローカライズされた MDX ベースの記事一覧です。",
+    "badge": "MDX Docs",
+    "title": "記事システム",
+    "description": "`content/docs/{locale}/` 配下の MDX ファイルを自動で一覧化し、`/docs/*` へルーティングします。",
+    "noArticles": "記事がまだありません",
+    "noArticlesDescription": "`content/docs/{locale}/` ディレクトリに `.mdx` ファイルを追加すると、ここに表示されます。",
+    "readArticle": "記事を読む",
+    "openIndex": "index を開く",
+    "articleList": "記事一覧",
+    "articleListDescription": "通常の記事とフォルダ index をまとめて表示します。",
+    "folderIndex": "フォルダ index",
+    "folderIndexDescription": "`content/docs/{locale}/**/index.mdx` を置くと、そのフォルダのトップページとして公開されます。"
+  },
+  "swr": {
+    "usersList": "ユーザー一覧",
+    "refresh": "再読み込み",
+    "addUser": "ユーザーを追加",
+    "editUser": "ユーザーを編集",
+    "name": "名前",
+    "email": "メール",
+    "edit": "編集",
+    "delete": "削除",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "add": "追加",
+    "failedToLoadUsers": "ユーザーの読み込みに失敗しました。",
+    "retry": "再試行",
+    "reloadPage": "ページを再読み込み",
+    "loadingUserCard": "ユーザーカードを読み込み中",
+    "deleteConfirm": "このユーザーを削除しますか？",
+    "deleteFailed": "ユーザーの削除に失敗しました",
+    "updateFailed": "ユーザーの更新に失敗しました",
+    "addFailed": "ユーザーの追加に失敗しました"
+  },
+  "article": {
+    "metaSuffix": "ドキュメント",
+    "notFound": "見つかりません",
+    "backToDocs": "記事一覧へ戻る",
+    "breadcrumbRoot": "docs",
+    "badge": "MDX 記事"
+  }
+}

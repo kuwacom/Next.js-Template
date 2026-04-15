@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,37 +11,76 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getAlternateLinks, getLocalizedHref, Link } from "@/i18n/navigation";
+import { isValidLocale } from "@/i18n/routing";
 import {
   buildMDXHref,
   getAllMDXContent,
   getMDXDirectoryIndexes,
 } from "@/lib/mdx";
 
-export const metadata: Metadata = {
-  title: "Docs",
-  description: "MDX ベースの記事一覧です。",
+type DocsIndexPageProps = {
+  params: Promise<{
+    locale: string;
+  }>;
 };
 
-const dateFormatter = new Intl.DateTimeFormat("ja-JP", {
-  dateStyle: "long",
-});
+export async function generateMetadata({
+  params,
+}: DocsIndexPageProps): Promise<Metadata> {
+  const { locale } = await params;
 
-export default async function DocsIndexPage() {
-  const mdxPages = await getAllMDXContent();
-  // フォルダごとの index.mdx を、専用セクションでも案内できるように取得する
-  const directoryIndexes = await getMDXDirectoryIndexes();
+  if (!isValidLocale(locale)) {
+    return {
+      title: "Not Found",
+    };
+  }
+
+  const t = await getTranslations({ locale, namespace: "docs" });
+
+  return {
+    title: t("metaTitle"),
+    description: t("metaDescription"),
+    // hreflang 用の alternate URL を locale ごとに出す
+    alternates: {
+      canonical: getLocalizedHref(locale, "/docs"),
+      languages: getAlternateLinks("/docs"),
+    },
+  };
+}
+
+export default async function DocsIndexPage({ params }: DocsIndexPageProps) {
+  const { locale } = await params;
+
+  if (!isValidLocale(locale)) {
+    notFound();
+  }
+
+  setRequestLocale(locale);
+
+  const t = await getTranslations({ locale, namespace: "docs" });
+  const dateFormatter = new Intl.DateTimeFormat(
+    locale === "ja" ? "ja-JP" : "en-US",
+    {
+      dateStyle: "long",
+    },
+  );
+
+  // 通常記事の一覧と、フォルダ index 用の記事一覧を分けて取得する
+  // 表示上は別セクションだが、元データは同じ MDX 群から組み立てている
+  const mdxPages = await getAllMDXContent(locale);
+  const directoryIndexes = await getMDXDirectoryIndexes(locale);
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-8 pb-12">
       <section className="space-y-4 pt-4">
-        <Badge variant="secondary">MDX Docs</Badge>
+        <Badge variant="secondary">{t("badge")}</Badge>
         <div className="space-y-3">
           <h1 className="text-4xl font-semibold tracking-tight">
-            記事システム
+            {t("title")}
           </h1>
           <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-            `content/docs/` 配下の MDX ファイルを自動で一覧化し、`/docs/*`
-            へルーティングします。
+            {t("description", { locale })}
           </p>
         </div>
       </section>
@@ -48,10 +88,9 @@ export default async function DocsIndexPage() {
       {mdxPages.length === 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>記事がまだありません</CardTitle>
+            <CardTitle>{t("noArticles")}</CardTitle>
             <CardDescription>
-              `content/docs/` ディレクトリに `.mdx`
-              ファイルを追加すると、ここに表示されます。
+              {t("noArticlesDescription", { locale })}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -61,11 +100,10 @@ export default async function DocsIndexPage() {
             <section className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-2xl font-semibold tracking-tight">
-                  フォルダ index
+                  {t("folderIndex")}
                 </h2>
                 <p className="text-sm leading-6 text-muted-foreground">
-                  `content/docs/**/index.mdx`
-                  を置くと、そのフォルダのトップページとして公開されます。
+                  {t("folderIndexDescription", { locale })}
                 </p>
               </div>
 
@@ -81,7 +119,6 @@ export default async function DocsIndexPage() {
                           {dateFormatter.format(new Date(mdxPage.publishedAt))}
                         </span>
                         <span>•</span>
-                        {/* index.mdx 自体ではなく、そのフォルダURLを表示する */}
                         <span>/docs/{mdxPage.directoryPath}</span>
                       </div>
                       <div className="space-y-2">
@@ -111,7 +148,7 @@ export default async function DocsIndexPage() {
 
                       <Button asChild variant="outline">
                         <Link href={buildMDXHref(mdxPage.directorySlug)}>
-                          index を開く
+                          {t("openIndex")}
                         </Link>
                       </Button>
                     </CardContent>
@@ -124,11 +161,11 @@ export default async function DocsIndexPage() {
           <section className="space-y-4">
             <div className="space-y-1">
               <h2 className="text-2xl font-semibold tracking-tight">
-                記事一覧
+                {t("articleList")}
               </h2>
               <p className="text-sm leading-6 text-muted-foreground">
                 {/* フォルダ index も通常の公開記事としては一覧に含める */}
-                通常の記事とフォルダ index をまとめて表示します。
+                {t("articleListDescription")}
               </p>
             </div>
 
@@ -144,7 +181,7 @@ export default async function DocsIndexPage() {
                         {dateFormatter.format(new Date(mdxPage.publishedAt))}
                       </span>
                       <span>•</span>
-                      <span>/{mdxPage.slugAsPath}</span>
+                      <span>{buildMDXHref(mdxPage.slug)}</span>
                     </div>
                     <div className="space-y-2">
                       <CardTitle className="text-2xl tracking-tight">
@@ -171,7 +208,9 @@ export default async function DocsIndexPage() {
                     </div>
 
                     <Button asChild variant="outline">
-                      <Link href={buildMDXHref(mdxPage.slug)}>記事を読む</Link>
+                      <Link href={buildMDXHref(mdxPage.slug)}>
+                        {t("readArticle")}
+                      </Link>
                     </Button>
                   </CardContent>
                 </Card>
