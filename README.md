@@ -152,6 +152,7 @@ src/
 │  └─ useAuth.ts              authStore の React 向け窓口
 ├─ lib/forms/
 │  └─ contact.ts              フォーム送信ロジック
+├─ lib/utils.ts               共通 utility
 ├─ schemas/                   zod スキーマ
 ├─ stores/
 │  └─ authStore.ts            認証状態の外部ストア

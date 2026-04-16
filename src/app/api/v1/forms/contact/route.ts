@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   createContactValidationResult,
-  getClientIp,
   submitContactForm,
 } from "@/lib/forms/contact";
+import { getClientIp } from "@/lib/utils";
 import {
   contactSubmissionResultSchema,
   getContactFormInput,
