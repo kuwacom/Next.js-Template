@@ -7,6 +7,34 @@ servers:
   - url: http://localhost:3000/api/v1
   - url: https://api.example.com/v1
 paths:
+  /forms/contact:
+    post:
+      summary: Submit a contact form
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactFormRequest'
+      responses:
+        '200':
+          description: Contact form submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactSubmissionResult'
+        '400':
+          description: Validation or Turnstile verification failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactSubmissionResult'
+        '500':
+          description: Server or configuration error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactSubmissionResult'
   /users:
     get:
       summary: Get a list of users
@@ -130,6 +158,87 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
+    ContactFormRequest:
+      type: object
+      properties:
+        company:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        locale:
+          type: string
+          enum:
+            - en
+            - ja
+        message:
+          type: string
+          minLength: 10
+          maxLength: 2000
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        pagePath:
+          type: string
+          minLength: 1
+        turnstileToken:
+          type: string
+          minLength: 1
+      required:
+        - company
+        - email
+        - locale
+        - message
+        - name
+        - pagePath
+        - turnstileToken
+    ContactFieldErrors:
+      type: object
+      properties:
+        company:
+          type: string
+        email:
+          type: string
+        message:
+          type: string
+        name:
+          type: string
+        turnstileToken:
+          type: string
+    ContactSubmissionStatus:
+      type: string
+      enum:
+        - config_error
+        - server_error
+        - success
+        - turnstile_error
+        - validation_error
+    ContactSubmissionResult:
+      type: object
+      properties:
+        fieldErrors:
+          $ref: '#/components/schemas/ContactFieldErrors'
+        message:
+          type: string
+        ok:
+          type: boolean
+        resetTurnstile:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/ContactSubmissionStatus'
+        turnstileErrors:
+          type: array
+          items:
+            type: string
+      required:
+        - fieldErrors
+        - message
+        - ok
+        - resetTurnstile
+        - status
+        - turnstileErrors
     User:
       type: object
       properties:

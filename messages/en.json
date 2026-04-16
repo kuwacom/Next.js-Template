@@ -1,11 +1,12 @@
 {
   "site": {
     "title": "Next.js Template",
-    "description": "A modern Next.js starter with localized routes and MDX docs."
+    "description": "A modern Next.js starter with localized routes, MDX docs, and form demos."
   },
   "nav": {
     "home": "Home",
     "docs": "Docs",
+    "forms": "Forms",
     "swr": "SWR Demo"
   },
   "theme": {
@@ -21,23 +22,197 @@
   },
   "home": {
     "metaTitle": "Home",
-    "metaDescription": "UI samples for the template homepage.",
-    "buttonsTitle": "Buttons",
-    "buttonsDescription": "Button variations from shadcn/ui.",
-    "inputsTitle": "Inputs",
-    "emailLabel": "Email",
-    "emailPlaceholder": "example@email.com",
-    "badgesTitle": "Badges",
-    "tabsTitle": "Tabs",
-    "default": "Default",
-    "secondary": "Secondary",
-    "outline": "Outline",
-    "ghost": "Ghost",
-    "destructive": "Destructive",
-    "tab1": "Tab 1",
-    "tab2": "Tab 2",
-    "tab1Content": "Content 1",
-    "tab2Content": "Content 2"
+    "metaDescription": "A showcase-style homepage for exploring the template.",
+    "tags": {
+      "ui": "UI",
+      "overview": "Overview",
+      "entry": "Entry",
+      "mdx": "MDX",
+      "docs": "Docs",
+      "content": "Content",
+      "swr": "SWR",
+      "hooks": "Hooks",
+      "crud": "CRUD",
+      "form": "Form",
+      "serverAction": "Server Action",
+      "api": "API",
+      "turnstile": "Turnstile"
+    },
+    "labels": {
+      "default": "Default",
+      "secondary": "Secondary",
+      "outline": "Outline",
+      "ghost": "Ghost",
+      "destructive": "Destructive",
+      "link": "Link"
+    },
+    "hero": {
+      "badges": {
+        "template": "Next.js Template",
+        "catalog": "UI Catalog",
+        "demo": "SWR / Forms / API",
+        "docs": "Localized MDX Docs"
+      },
+      "title": "A redesigned top page for browsing the whole template in one place",
+      "description": "This page gathers UI samples, major demo routes, API entry points, and source landmarks into a single hub. It is meant to make the template easier to explore after the i18n migration instead of acting as a narrow single-feature landing page.",
+      "primaryCta": "Browse UI samples",
+      "docsCta": "Open docs",
+      "mapCta": "View implementation map",
+      "formsCta": "Try form demos",
+      "themeNote": "Theme switching is available from the header controls."
+    },
+    "summary": {
+      "ui": {
+        "title": "UI Components",
+        "description": "Buttons, badges, cards, tabs, dialogs, inputs, labels, and textarea."
+      },
+      "routes": {
+        "title": "Demo Routes",
+        "description": "Jump to docs, SWR CRUD, and both contact form implementations."
+      },
+      "docs": {
+        "title": "Localized Docs",
+        "description": "The MDX docs system keeps locale-aware content under content/docs/[locale]."
+      },
+      "map": {
+        "title": "Implementation Map",
+        "description": "The home page now points to the main files behind each feature area."
+      }
+    },
+    "docsSection": {
+      "kicker": "Docs System",
+      "title": "Localized MDX article system",
+      "description": "The docs pages still work as a first-class part of the template, and the top page now links back into that flow.",
+      "overviewTitle": "MDX Docs Overview",
+      "overviewDescription": "MDX files under content/docs/[locale] are discovered, indexed, and published under /docs with directory index support and locale fallback.",
+      "detailList": {
+        "one": "Published articles are collected on src/app/[locale]/docs/page.tsx.",
+        "two": "Nested pages render through src/app/[locale]/docs/[...slug]/page.tsx.",
+        "three": "Missing translations can still fall back to the default locale via the MDX loader."
+      },
+      "primaryCta": "Open /docs",
+      "filesTitle": "Key files",
+      "filesDescription": "These are the main entry points for understanding the docs feature."
+    },
+    "demoSection": {
+      "kicker": "Demo Routes",
+      "title": "Direct links to each implementation example",
+      "description": "The main app routes and API endpoints are collected as cards so their role is clear at a glance.",
+      "openRoute": "Open {route}",
+      "openEndpoint": "Check {route}"
+    },
+    "demoPages": {
+      "home": {
+        "title": "Showcase Home",
+        "description": "This redesigned home page acts as an overview of the whole starter, not just a simple component sample."
+      },
+      "docs": {
+        "title": "MDX Docs System",
+        "description": "Browse localized MDX articles under /docs and inspect how content/docs/[locale] is published."
+      },
+      "swr": {
+        "title": "SWR CRUD Demo",
+        "description": "See the standard loading, error, and mutation flow for the sample users API."
+      },
+      "action": {
+        "title": "Turnstile + Server Action",
+        "description": "A contact form example that posts straight into a Next.js Server Action and validates Turnstile on the server."
+      },
+      "api": {
+        "title": "Turnstile + API Route",
+        "description": "A contact form example that submits with fetch to an API route for frontend/backend separation."
+      }
+    },
+    "apiExamples": {
+      "users": {
+        "title": "Users API",
+        "description": "The read endpoint used by the SWR CRUD demo."
+      },
+      "contact": {
+        "title": "Contact Form API",
+        "description": "The shared API route used by the fetch-based contact form example."
+      }
+    },
+    "showcaseSection": {
+      "kicker": "UI Showcase",
+      "title": "Visual samples of the shipped UI building blocks",
+      "description": "The same components used across the template can be previewed here without leaving the home page.",
+      "buttons": {
+        "title": "Button / Badge",
+        "description": "A quick comparison of the primary button variants and common status badges."
+      },
+      "form": {
+        "title": "Form Controls",
+        "description": "A small slice of the input stack used by the contact form examples.",
+        "nameLabel": "Name",
+        "emailLabel": "Email",
+        "messageLabel": "Message",
+        "messageValue": "You can preview how textarea-based form UI looks here before jumping into the contact demos.",
+        "primaryAction": "Primary Action",
+        "secondaryAction": "Secondary Action"
+      },
+      "tabs": {
+        "title": "Tabs",
+        "description": "A small tab pattern for switching between overview, route, and file-level information.",
+        "overview": "Overview",
+        "routes": "Routes",
+        "files": "Files",
+        "overviewBody": {
+          "one": "The home page itself now serves as a guided index into the starter.",
+          "two": "You can move from overview to docs, forms, and CRUD demos from one place."
+        },
+        "routesBody": {
+          "one": "/swr demonstrates the SWR-based CRUD flow.",
+          "two": "/forms/action and /forms/api let you compare two contact form integration styles."
+        },
+        "filesBody": {
+          "one": "Core UI primitives live under src/components/ui/*.",
+          "two": "Route handlers and form logic live under src/app/api/* and src/lib/forms/*."
+        }
+      },
+      "dialog": {
+        "title": "Dialog / Card",
+        "description": "A small interactive preview for the dialog and card primitives.",
+        "cardTitle": "Card Anatomy",
+        "cardDescription": "A compact sample of the header, content, and footer regions.",
+        "cardBody": "These cards are used as the main building block across the home page and feature pages.",
+        "cardTagOne": "Reusable",
+        "cardTagTwo": "Layout",
+        "open": "Open dialog preview",
+        "modalTitle": "Dialog Preview",
+        "modalDescription": "Use this to confirm the modal surface, focus handling, and close controls.",
+        "modalBody": "This pattern can be reused for confirmations, previews, and edit forms.",
+        "close": "Close",
+        "confirm": "Looks good"
+      }
+    },
+    "implementationSection": {
+      "kicker": "Implementation Map",
+      "title": "Where each feature lives in the codebase",
+      "description": "This makes it easier to trace the i18n-aware version of each feature after the branch merge."
+    },
+    "implementation": {
+      "pages": {
+        "title": "App Router Pages",
+        "description": "Page entry points and top-level demo routes"
+      },
+      "ui": {
+        "title": "UI Components",
+        "description": "shadcn/ui-based primitives and local wrappers"
+      },
+      "docs": {
+        "title": "MDX / Docs",
+        "description": "Localized MDX content and route rendering"
+      },
+      "data": {
+        "title": "API / Data Layer",
+        "description": "Clients, hooks, and sample user data flow"
+      },
+      "forms": {
+        "title": "Forms / Security",
+        "description": "Turnstile, webhook relay, and contact form orchestration"
+      }
+    }
   },
   "docs": {
     "metaTitle": "Docs",
@@ -53,6 +228,94 @@
     "articleListDescription": "Regular articles and folder indexes are shown together.",
     "folderIndex": "Folder Index",
     "folderIndexDescription": "Place `content/docs/{locale}/**/index.mdx` to publish it as the top page for that folder."
+  },
+  "forms": {
+    "metaTitle": "Forms",
+    "metaDescription": "Contact form implementation examples for the localized template.",
+    "badge": "Contact Form Demos",
+    "title": "Inquiry form implementation examples",
+    "description": "Two contact form styles were reintroduced on top of the i18n-aware branch: one with Server Actions and one with an API route.",
+    "overviewActionTitle": "Turnstile + Server Action",
+    "overviewActionDescription": "Best when your Next.js app already owns the server and you want the shortest path from form to backend processing.",
+    "overviewApiTitle": "Turnstile + API Route",
+    "overviewApiDescription": "Best when you want a fetch-based frontend integration that can be separated from the server more easily.",
+    "openAction": "Open Server Action demo",
+    "openApi": "Open API demo",
+    "compareTitle": "How to choose",
+    "compareDescription": "Both examples share the same validation, Turnstile verification, and Discord relay on the server side.",
+    "comparePointOne": "Use the Server Action route when the app is deployed as a full Next.js server.",
+    "comparePointTwo": "Use the API route when the UI may move to a separate host or needs an explicit HTTP boundary.",
+    "comparePointThree": "Both pages use the same localized field labels and validation feedback.",
+    "actionMetaTitle": "Server Action Contact Form",
+    "actionMetaDescription": "A localized contact form example powered by a Next.js Server Action.",
+    "actionRouteLabel": "/forms/action",
+    "actionTitle": "Cloudflare Turnstile + Server Action",
+    "actionDescription": "This version posts directly to a Server Action, keeping Turnstile verification and the Discord webhook entirely on the server.",
+    "actionFeatureTitle": "Why use this structure",
+    "actionFeatureDescription": "This is the shortest integration when your Next.js app already runs with server capabilities.",
+    "actionFeaturePointOne": "The form action points directly at a Server Action, so you do not need a separate client fetch step.",
+    "actionFeaturePointTwo": "The Turnstile secret and Discord webhook stay on the server and never reach the browser.",
+    "actionFeaturePointThree": "If you need a fetch-based boundary instead, compare it with the API version.",
+    "actionFeatureLink": "See the API version",
+    "actionFeatureButton": "Open API demo",
+    "apiMetaTitle": "API Contact Form",
+    "apiMetaDescription": "A localized contact form example that submits to an API route.",
+    "apiRouteLabel": "/forms/api",
+    "apiTitle": "Cloudflare Turnstile + API Route",
+    "apiDescription": "This version submits via fetch to an API route, which makes the frontend/server boundary more explicit.",
+    "apiFeatureTitle": "Why use this structure",
+    "apiFeatureDescription": "This is easier to reuse when the UI and API need to be separated over time.",
+    "apiFeaturePointOne": "The client only needs to call an HTTP endpoint, which keeps the frontend integration portable.",
+    "apiFeaturePointTwo": "Turnstile verification and Discord delivery still happen on the server in the shared backend flow.",
+    "apiFeaturePointThree": "If you want the smallest Next.js-only setup, compare it with the Server Action version.",
+    "apiFeatureLink": "See the Server Action version",
+    "apiFeatureButton": "Open Server Action demo",
+    "cardActionTitle": "Server Action form",
+    "cardActionDescription": "A direct form action for server-first Next.js deployments.",
+    "cardApiTitle": "API form",
+    "cardApiDescription": "A fetch-based form for a clearer HTTP boundary.",
+    "nameLabel": "Name",
+    "emailLabel": "Email",
+    "companyLabel": "Company",
+    "messageLabel": "Message",
+    "botLabel": "Bot protection",
+    "namePlaceholder": "Jane Doe",
+    "emailPlaceholder": "contact@example.com",
+    "companyPlaceholder": "Example Inc.",
+    "messagePlaceholder": "Tell us a little about your inquiry.",
+    "submitAction": "Send with Server Action",
+    "submitActionPending": "Sending...",
+    "submitApi": "Send via API",
+    "submitApiPending": "Sending...",
+    "errors": {
+      "nameRequired": "Please enter your name.",
+      "nameTooLong": "Please keep the name within 80 characters.",
+      "emailRequired": "Please enter your email address.",
+      "emailInvalid": "Please enter a valid email address.",
+      "companyTooLong": "Please keep the company name within 100 characters.",
+      "messageRequired": "Please enter your message.",
+      "messageTooShort": "Please enter at least 10 characters.",
+      "messageTooLong": "Please keep the message within 2000 characters.",
+      "turnstileRequired": "Please complete the bot check."
+    },
+    "messages": {
+      "validationError": "Please review the form fields and try again.",
+      "turnstileError": "Turnstile verification failed. Please try again.",
+      "configTurnstile": "The Turnstile secret is not configured on the server.",
+      "configWebhook": "The Discord webhook is not configured on the server.",
+      "discordError": "The message could not be sent to Discord. Please try again later.",
+      "unexpectedError": "An unexpected error occurred while processing the form.",
+      "requestFailed": "The request to the API endpoint failed. Please verify the endpoint settings.",
+      "invalidJson": "The API payload could not be read.",
+      "success": "Your inquiry was sent successfully."
+    },
+    "turnstile": {
+      "missingSiteKey": "NEXT_PUBLIC_TURNSTILE_SITE_KEY is missing, so the widget cannot be displayed.",
+      "apiUnavailable": "The Turnstile API is not ready yet.",
+      "loadError": "The Turnstile script could not be loaded. Please check your network settings or extensions.",
+      "initError": "Turnstile failed to initialize",
+      "expired": "The verification expired. Please complete it again."
+    }
   },
   "swr": {
     "usersList": "Users List",

@@ -1,11 +1,12 @@
 {
   "site": {
     "title": "Next.js Template",
-    "description": "ローカライズ済みルートと MDX ドキュメントを備えた Next.js スターターです。"
+    "description": "ローカライズ済みルート、MDX ドキュメント、問い合わせフォーム例を備えた Next.js スターターです。"
   },
   "nav": {
     "home": "ホーム",
     "docs": "ドキュメント",
+    "forms": "フォーム",
     "swr": "SWR デモ"
   },
   "theme": {
@@ -21,23 +22,197 @@
   },
   "home": {
     "metaTitle": "ホーム",
-    "metaDescription": "テンプレートの UI サンプルを表示します。",
-    "buttonsTitle": "Buttons",
-    "buttonsDescription": "shadcn/ui のボタンバリエーション",
-    "inputsTitle": "Inputs",
-    "emailLabel": "Email",
-    "emailPlaceholder": "example@email.com",
-    "badgesTitle": "Badges",
-    "tabsTitle": "Tabs",
-    "default": "Default",
-    "secondary": "Secondary",
-    "outline": "Outline",
-    "ghost": "Ghost",
-    "destructive": "Destructive",
-    "tab1": "タブ 1",
-    "tab2": "タブ 2",
-    "tab1Content": "内容 1",
-    "tab2Content": "内容 2"
+    "metaDescription": "テンプレート全体を見渡せるショーケース形式のトップページです。",
+    "tags": {
+      "ui": "UI",
+      "overview": "Overview",
+      "entry": "Entry",
+      "mdx": "MDX",
+      "docs": "Docs",
+      "content": "Content",
+      "swr": "SWR",
+      "hooks": "Hooks",
+      "crud": "CRUD",
+      "form": "Form",
+      "serverAction": "Server Action",
+      "api": "API",
+      "turnstile": "Turnstile"
+    },
+    "labels": {
+      "default": "Default",
+      "secondary": "Secondary",
+      "outline": "Outline",
+      "ghost": "Ghost",
+      "destructive": "Destructive",
+      "link": "Link"
+    },
+    "hero": {
+      "badges": {
+        "template": "Next.js Template",
+        "catalog": "UI Catalog",
+        "demo": "SWR / Forms / API",
+        "docs": "Localized MDX Docs"
+      },
+      "title": "テンプレート全体をひと目で追えるトップページに刷新しました",
+      "description": "UI サンプル、主要なデモページ、API の入口、実装ファイルの位置をひとつのハブに集約しています。i18n 対応後のブランチでも全体像を掴みやすいよう、単発のサンプル画面ではなく案内ページとして組み直しました。",
+      "primaryCta": "UI サンプルを見る",
+      "docsCta": "ドキュメントを開く",
+      "mapCta": "実装マップを見る",
+      "formsCta": "フォーム例を見る",
+      "themeNote": "テーマ切り替えはヘッダー右上のコントロールから確認できます。"
+    },
+    "summary": {
+      "ui": {
+        "title": "UI Components",
+        "description": "Button、Badge、Card、Tabs、Dialog、Input、Label、Textarea をまとめて確認できます。"
+      },
+      "routes": {
+        "title": "Demo Routes",
+        "description": "Docs、SWR CRUD、問い合わせフォーム 2 種の導線をここから辿れます。"
+      },
+      "docs": {
+        "title": "Localized Docs",
+        "description": "MDX ドキュメントは content/docs/[locale] を基準にローカライズ対応しています。"
+      },
+      "map": {
+        "title": "Implementation Map",
+        "description": "どの機能がどのファイルにあるかをトップページから追えるようにしました。"
+      }
+    },
+    "docsSection": {
+      "kicker": "Docs System",
+      "title": "ローカライズ対応の MDX 記事システム",
+      "description": "ドキュメント機能は引き続きテンプレートの中心機能であり、トップからそのまま導線を戻せるようにしています。",
+      "overviewTitle": "MDX Docs Overview",
+      "overviewDescription": "content/docs/[locale] 配下の MDX を走査し、一覧化し、ディレクトリ index と locale フォールバック込みで /docs 配下へ公開します。",
+      "detailList": {
+        "one": "公開記事の一覧は src/app/[locale]/docs/page.tsx に集約されます。",
+        "two": "ネストした記事は src/app/[locale]/docs/[...slug]/page.tsx で描画されます。",
+        "three": "翻訳がまだない記事も、MDX ローダー側でデフォルト言語へフォールバックできます。"
+      },
+      "primaryCta": "/docs を開く",
+      "filesTitle": "主な実装ファイル",
+      "filesDescription": "ドキュメント機能を追うときの入口になるファイル群です。"
+    },
+    "demoSection": {
+      "kicker": "Demo Routes",
+      "title": "各実装例への直接リンク",
+      "description": "主要ページと API の入口をカード化し、役割がすぐ分かるようにまとめています。",
+      "openRoute": "{route} を開く",
+      "openEndpoint": "{route} を確認する"
+    },
+    "demoPages": {
+      "home": {
+        "title": "Showcase Home",
+        "description": "この刷新済みトップページ自体が、テンプレート全体を案内するハブとして機能します。"
+      },
+      "docs": {
+        "title": "MDX Docs System",
+        "description": "content/docs/[locale] をもとに公開されるローカライズ済み MDX 記事を /docs から確認できます。"
+      },
+      "swr": {
+        "title": "SWR CRUD Demo",
+        "description": "users API を使った loading、error、mutation の流れをひと通り確認できます。"
+      },
+      "action": {
+        "title": "Turnstile + Server Action",
+        "description": "Server Action へ直接送信し、サーバー側で Turnstile 検証まで完結する問い合わせフォーム例です。"
+      },
+      "api": {
+        "title": "Turnstile + API Route",
+        "description": "fetch で API Route に送る構成で、フロントとバックの境界を分けやすい問い合わせフォーム例です。"
+      }
+    },
+    "apiExamples": {
+      "users": {
+        "title": "Users API",
+        "description": "SWR CRUD デモが利用している一覧取得 API です。"
+      },
+      "contact": {
+        "title": "Contact Form API",
+        "description": "fetch ベースの問い合わせフォームから利用する共通 API Route です。"
+      }
+    },
+    "showcaseSection": {
+      "kicker": "UI Showcase",
+      "title": "同梱 UI コンポーネントの表示例",
+      "description": "テンプレート内で使っている UI を、ホーム画面の中だけで見比べられるようにしています。",
+      "buttons": {
+        "title": "Button / Badge",
+        "description": "主要なボタン variant と状態表示用 badge をまとめて比較できます。"
+      },
+      "form": {
+        "title": "Form Controls",
+        "description": "問い合わせフォーム例でも使っている入力 UI の断面を簡単に確認できます。",
+        "nameLabel": "Name",
+        "emailLabel": "Email",
+        "messageLabel": "Message",
+        "messageValue": "問い合わせフォームで使う Textarea の見え方もここで先に確認できます。",
+        "primaryAction": "Primary Action",
+        "secondaryAction": "Secondary Action"
+      },
+      "tabs": {
+        "title": "Tabs",
+        "description": "overview、routes、files を切り替える簡単なタブパターンです。",
+        "overview": "Overview",
+        "routes": "Routes",
+        "files": "Files",
+        "overviewBody": {
+          "one": "トップページ自体を、スターター全体の案内ページとして使えるようにしています。",
+          "two": "ここから docs、forms、CRUD デモへ横断的に遷移できます。"
+        },
+        "routesBody": {
+          "one": "/swr では SWR ベースの CRUD フローを確認できます。",
+          "two": "/forms/action と /forms/api では問い合わせフォームの 2 方式を比較できます。"
+        },
+        "filesBody": {
+          "one": "UI の基本部品は src/components/ui/* に集約しています。",
+          "two": "フォーム処理は src/app/api/* と src/lib/forms/* にまとまっています。"
+        }
+      },
+      "dialog": {
+        "title": "Dialog / Card",
+        "description": "Dialog と Card の組み合わせをその場で触って確認できます。",
+        "cardTitle": "Card Anatomy",
+        "cardDescription": "Header、Content、Footer の構成を確認するためのサンプルです。",
+        "cardBody": "このトップページや各機能ページでも、カードを基本的なレイアウト単位として使っています。",
+        "cardTagOne": "Reusable",
+        "cardTagTwo": "Layout",
+        "open": "Dialog を開く",
+        "modalTitle": "Dialog Preview",
+        "modalDescription": "モーダル面、フォーカス制御、閉じる導線の見え方を確認できます。",
+        "modalBody": "確認ダイアログ、詳細プレビュー、編集フォームなどへ流用しやすいパターンです。",
+        "close": "閉じる",
+        "confirm": "確認した"
+      }
+    },
+    "implementationSection": {
+      "kicker": "Implementation Map",
+      "title": "機能ごとの主な実装場所",
+      "description": "ブランチ統合後でも、i18n 対応版の各機能をどこから読めばよいか追いやすくしています。"
+    },
+    "implementation": {
+      "pages": {
+        "title": "App Router Pages",
+        "description": "画面の入口と主要デモページ群"
+      },
+      "ui": {
+        "title": "UI Components",
+        "description": "shadcn/ui ベースの基本コンポーネント"
+      },
+      "docs": {
+        "title": "MDX / Docs",
+        "description": "ローカライズ済み MDX コンテンツと描画処理"
+      },
+      "data": {
+        "title": "API / Data Layer",
+        "description": "API クライアント、hooks、サンプルデータの流れ"
+      },
+      "forms": {
+        "title": "Forms / Security",
+        "description": "Turnstile、Webhook 連携、問い合わせフォーム処理"
+      }
+    }
   },
   "docs": {
     "metaTitle": "ドキュメント",
@@ -53,6 +228,94 @@
     "articleListDescription": "通常の記事とフォルダ index をまとめて表示します。",
     "folderIndex": "フォルダ index",
     "folderIndexDescription": "`content/docs/{locale}/**/index.mdx` を置くと、そのフォルダのトップページとして公開されます。"
+  },
+  "forms": {
+    "metaTitle": "フォーム",
+    "metaDescription": "ローカライズ済みテンプレート向けの問い合わせフォーム実装例です。",
+    "badge": "Contact Form Demos",
+    "title": "問い合わせフォームの実装例",
+    "description": "i18n 対応済みブランチの構成に合わせて、問い合わせフォームを 2 方式で導入し直しました。Server Action 版と API Route 版を比較できます。",
+    "overviewActionTitle": "Turnstile + Server Action",
+    "overviewActionDescription": "Next.js サーバーをそのまま使う構成で、フォームからサーバー処理までを最短でつなぎたいときに向いています。",
+    "overviewApiTitle": "Turnstile + API Route",
+    "overviewApiDescription": "fetch ベースで送信するため、将来的にフロントとバックを分けたい構成でも扱いやすいです。",
+    "openAction": "Server Action 版を開く",
+    "openApi": "API 版を開く",
+    "compareTitle": "使い分けの目安",
+    "compareDescription": "どちらの実装も、入力検証、Turnstile 検証、Discord 通知はサーバー側の共通ロジックで扱います。",
+    "comparePointOne": "Next.js サーバーとして完結するなら Server Action 版が最短です。",
+    "comparePointTwo": "HTTP 境界を明示したいなら API Route 版が扱いやすいです。",
+    "comparePointThree": "フィールド定義とバリデーション表示は両方のページで共通化しています。",
+    "actionMetaTitle": "Server Action 問い合わせフォーム",
+    "actionMetaDescription": "Next.js Server Action で処理するローカライズ済み問い合わせフォーム例です。",
+    "actionRouteLabel": "/forms/action",
+    "actionTitle": "Cloudflare Turnstile + Server Action",
+    "actionDescription": "フォーム送信先をそのまま Server Action にし、Turnstile 検証と Discord Webhook 送信をサーバー側で完結させる実装です。",
+    "actionFeatureTitle": "この構成が向いている場面",
+    "actionFeatureDescription": "Next.js アプリがサーバー機能を持つ前提なら、最も薄く組み込める構成です。",
+    "actionFeaturePointOne": "フォームの action 先がそのまま Server Action なので、別途 fetch 処理を書く量を抑えられます。",
+    "actionFeaturePointTwo": "Turnstile secret と Discord Webhook はブラウザへ出ず、サーバーだけで利用されます。",
+    "actionFeaturePointThree": "HTTP 経由の境界が必要な場合は API 版と見比べてください。",
+    "actionFeatureLink": "API 版を見る",
+    "actionFeatureButton": "API 版を開く",
+    "apiMetaTitle": "API 問い合わせフォーム",
+    "apiMetaDescription": "API Route へ送信するローカライズ済み問い合わせフォーム例です。",
+    "apiRouteLabel": "/forms/api",
+    "apiTitle": "Cloudflare Turnstile + API Route",
+    "apiDescription": "fetch で API Route へ送信するため、フロントエンドとサーバー処理の境界を明確にしやすい実装です。",
+    "apiFeatureTitle": "この構成が向いている場面",
+    "apiFeatureDescription": "将来的に UI 側と API 側を分ける可能性がある場合でも、そのまま流用しやすい構成です。",
+    "apiFeaturePointOne": "クライアント側は HTTP エンドポイントを呼ぶだけなので、フロント実装を持ち運びやすくなります。",
+    "apiFeaturePointTwo": "Turnstile 検証と Discord 送信は共通サーバーロジックとして維持できます。",
+    "apiFeaturePointThree": "Next.js 内で最短に組み込みたい場合は Server Action 版も比較してください。",
+    "apiFeatureLink": "Server Action 版を見る",
+    "apiFeatureButton": "Server Action 版を開く",
+    "cardActionTitle": "Server Action フォーム",
+    "cardActionDescription": "Next.js サーバー前提の構成に向いた、直接 action 送信する実装です。",
+    "cardApiTitle": "API フォーム",
+    "cardApiDescription": "HTTP 境界を分けやすい fetch ベースの実装です。",
+    "nameLabel": "お名前",
+    "emailLabel": "メールアドレス",
+    "companyLabel": "会社名",
+    "messageLabel": "お問い合わせ内容",
+    "botLabel": "BOT 対策",
+    "namePlaceholder": "山田 太郎",
+    "emailPlaceholder": "contact@example.com",
+    "companyPlaceholder": "Example Inc.",
+    "messagePlaceholder": "ご相談内容を入力してください。",
+    "submitAction": "Server Action で送信",
+    "submitActionPending": "送信中...",
+    "submitApi": "API 経由で送信",
+    "submitApiPending": "送信中...",
+    "errors": {
+      "nameRequired": "お名前を入力してください。",
+      "nameTooLong": "お名前は 80 文字以内で入力してください。",
+      "emailRequired": "メールアドレスを入力してください。",
+      "emailInvalid": "メールアドレスの形式が正しくありません。",
+      "companyTooLong": "会社名は 100 文字以内で入力してください。",
+      "messageRequired": "お問い合わせ内容を入力してください。",
+      "messageTooShort": "お問い合わせ内容は 10 文字以上で入力してください。",
+      "messageTooLong": "お問い合わせ内容は 2000 文字以内で入力してください。",
+      "turnstileRequired": "BOT 対策の確認を完了してください。"
+    },
+    "messages": {
+      "validationError": "入力内容を確認してから再度お試しください。",
+      "turnstileError": "Turnstile の検証に失敗しました。もう一度お試しください。",
+      "configTurnstile": "サーバー側で Turnstile secret が設定されていません。",
+      "configWebhook": "サーバー側で Discord Webhook が設定されていません。",
+      "discordError": "Discord への送信に失敗しました。時間をおいて再度お試しください。",
+      "unexpectedError": "送信処理中に予期しないエラーが発生しました。",
+      "requestFailed": "API への送信に失敗しました。エンドポイント設定を確認してください。",
+      "invalidJson": "API の入力を読み取れませんでした。",
+      "success": "お問い合わせを送信しました。"
+    },
+    "turnstile": {
+      "missingSiteKey": "NEXT_PUBLIC_TURNSTILE_SITE_KEY が未設定のため Turnstile を表示できません。",
+      "apiUnavailable": "Turnstile API の初期化がまだ完了していません。",
+      "loadError": "Turnstile のスクリプトを読み込めませんでした。ネットワーク設定や拡張機能を確認してください。",
+      "initError": "Turnstile の初期化に失敗しました",
+      "expired": "認証の有効期限が切れました。もう一度確認してください。"
+    }
   },
   "swr": {
     "usersList": "ユーザー一覧",

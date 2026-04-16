@@ -57,6 +57,7 @@ export function ExampleHeader() {
             {[
               { href: "/", label: tNav("home") },
               { href: "/docs", label: tNav("docs") },
+              { href: "/forms", label: tNav("forms") },
               { href: "/swr", label: tNav("swr") },
             ].map((item) => {
               const isActive =
