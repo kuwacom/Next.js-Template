@@ -27,7 +27,17 @@ export function useAddUser() {
 
   const addUser = async (user: UserRequest) => {
     const createdUser = await mutation.trigger(user);
-    await mutate(usersListKey(authVersion));
+
+    // cacheを変更しないで再取得する場合
+    // await mutate(usersListKey(authVersion));
+
+    await mutate(
+      usersListKey(authVersion),
+      (currentUsers = []) => [...currentUsers, createdUser],
+      {
+        revalidate: false,
+      },
+    );
     return createdUser;
   };
 

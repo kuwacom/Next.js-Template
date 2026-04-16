@@ -15,11 +15,9 @@ async function getUsersRequest(): Promise<User[]> {
 
 export function useUsers() {
   const { authVersion } = useAuth();
-  const swr = useSWR<User[]>(usersListKey(authVersion), () => getUsersRequest(), {
-    revalidateIfStale: true,
-    revalidateOnMount: true,
-    revalidateOnReconnect: true,
-  });
+  const swr = useSWR<User[]>(usersListKey(authVersion), () =>
+    getUsersRequest(),
+  );
 
   return {
     ...swr,

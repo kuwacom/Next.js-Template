@@ -1,109 +1,73 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import { useState } from "react";
 import {
   useAddUser,
   useDeleteUser,
   useUpdateUser,
   useUsers,
 } from "@/api/v1/users";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User } from "@/types/v1/api";
 
-/* ============================
-   ErrorBoundary
-   Suspense で投げられた例外（fetch エラー等）をキャッチしてリトライUIを表示する
-   ============================ */
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode; onReset?: () => void },
-  { hasError: boolean; error?: Error }
-> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false };
+type DialogMode = "create" | "edit";
+
+type UserFormValues = {
+  name: string;
+  email: string;
+};
+
+type Notice = {
+  tone: "success" | "error";
+  message: string;
+};
+
+const EMPTY_USER_FORM: UserFormValues = {
+  name: "",
+  email: "",
+};
+
+/**
+ * 表示用のエラーメッセージへ正規化する
+ */
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) {
+    return error.message;
   }
 
-  static getDerivedStateFromError(error: any) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: any, info: any) {
-    console.error("ErrorBoundary caught:", error, info);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6">
-          <p className="text-red-600 text-lg mb-4">Failed to load users.</p>
-          <p className="text-sm text-muted-foreground mb-6">
-            {String(this.state.error)}
-          </p>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => {
-                this.setState({ hasError: false, error: undefined });
-                this.props.onReset?.();
-              }}
-            >
-              Retry
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => window.location.reload()}
-            >
-              Reload Page
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
+  return "ユーザー情報の取得に失敗しました";
 }
 
-/* ============================
-   UsersLoadingSkeleton (SVGアニメーション)
-   - 各カードの「ロード中バージョン」を SVG で表現
-   - Tailwind の animate-pulse を wrapper に付与して脈動するアニメーションに
-   - count: 表示するスケルトンカード数
-   ============================ */
+/**
+ * 初回ロード中に表示するユーザーカードのスケルトン
+ */
 function UsersLoadingSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {Array.from({ length: count }).map((_, i) => (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: count }).map((_, index) => (
         <div
-          key={i}
-          // animate-pulse を親に付けて内部 SVG を脈動させる
-          className="p-4 border rounded-lg bg-card animate-pulse"
+          key={index}
+          className="rounded-lg border bg-card p-4 animate-pulse"
           aria-hidden
         >
-          {/* SVG: avatar + two text lines + two buttons を表現 */}
           <svg
             viewBox="0 0 360 120"
             width="100%"
             height="120"
-            className="w-full h-30"
+            className="h-30 w-full"
           >
-            {/* 背景の四角（カードのコンテント領域） */}
             <rect x="0" y="0" width="360" height="120" rx="8" fill="none" />
-
-            {/* 左の丸（avatar） */}
             <circle cx="36" cy="36" r="24" className="fill-muted" />
-
-            {/* 名前のライン（長め） */}
             <rect
               x="72"
               y="18"
@@ -112,8 +76,6 @@ function UsersLoadingSkeleton({ count = 6 }: { count?: number }) {
               height="14"
               className="fill-muted"
             />
-
-            {/* メールのライン（短め） */}
             <rect
               x="72"
               y="40"
@@ -122,8 +84,6 @@ function UsersLoadingSkeleton({ count = 6 }: { count?: number }) {
               height="12"
               className="fill-muted"
             />
-
-            {/* 下部のボタン風ブロック（2つ） */}
             <rect
               x="72"
               y="68"
@@ -140,8 +100,6 @@ function UsersLoadingSkeleton({ count = 6 }: { count?: number }) {
               height="28"
               className="fill-muted"
             />
-
-            {/* 右上の小さなメタ情報（ダミー） */}
             <rect
               x="300"
               y="18"
@@ -151,8 +109,6 @@ function UsersLoadingSkeleton({ count = 6 }: { count?: number }) {
               className="fill-muted"
             />
           </svg>
-
-          {/* 補助のテキスト（スクリーンリーダー無関係） */}
           <div className="sr-only">Loading user card</div>
         </div>
       ))}
@@ -160,195 +116,406 @@ function UsersLoadingSkeleton({ count = 6 }: { count?: number }) {
   );
 }
 
-/* ============================
-   UsersList: 実データを表示するカードリスト
-   - Suspense の中で呼ばれることを想定しているので、通常は users は存在する
-   - それでも安全のため users?.map を使って無闇なクラッシュを防ぐ
-   ============================ */
+/**
+ * 一覧取得エラー時の再試行 UI
+ */
+function UsersErrorState({
+  message,
+  onRetry,
+  isRetrying,
+}: {
+  message: string;
+  onRetry: () => void;
+  isRetrying: boolean;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>ユーザー一覧を読み込めませんでした</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">{message}</p>
+        <div className="flex gap-2">
+          <Button onClick={onRetry} disabled={isRetrying}>
+            {isRetrying ? "再取得中..." : "再試行"}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => window.location.reload()}
+          >
+            ページを再読み込み
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * CRUD デモ用のユーザー一覧カード
+ */
 function UsersList({
+  users,
   onEdit,
   onDelete,
+  deletingUserId,
+  isBusy,
 }: {
-  onEdit: (u: User) => void;
-  onDelete: (id: number) => void;
+  users: User[];
+  onEdit: (user: User) => void;
+  onDelete: (user: User) => void;
+  deletingUserId: number | null;
+  isBusy: boolean;
 }) {
-  const { users } = useUsers();
+  if (users.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center text-sm text-muted-foreground">
+          ユーザーがまだ登録されていません
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {users?.map((user) => (
-        <Card key={user.id}>
-          <CardHeader>
-            <CardTitle>{user.name}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">Email: {user.email}</p>
-            <div className="flex gap-2 mt-2">
-              <Button size="sm" onClick={() => onEdit(user)}>
-                Edit
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => onDelete(user.id)}
-              >
-                Delete
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {users.map((user) => {
+        const isDeleting = deletingUserId === user.id;
+
+        return (
+          <Card key={user.id}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between gap-3">
+                <span>{user.name}</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  ID: {user.id}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">{user.email}</p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => onEdit(user)}
+                  disabled={isBusy}
+                >
+                  編集
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => onDelete(user)}
+                  disabled={isBusy}
+                >
+                  {isDeleting ? "削除中..." : "削除"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
 
-/* ============================
-   Page Component
-   - Dialog 管理、CRUD 呼び出し、Suspense + ErrorBoundary の組み合わせ
-   ============================ */
-export default function SWRPage() {
-  // mutate をここで使いたいので useUsers() を呼んでおく
-  // （suspense: true のため、この呼び出し自体は Suspense の挙動に影響することに注意）
-  const { mutate } = useUsers();
-  const { addUser } = useAddUser();
-  const { updateUser } = useUpdateUser();
-  const { deleteUser } = useDeleteUser();
-
-  // 編集ダイアログ用 state
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-
-  // 追加ダイアログ用 state
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [addName, setAddName] = useState("");
-  const [addEmail, setAddEmail] = useState("");
-
-  /* --- ハンドラ --- */
-  const handleEdit = (user: User) => {
-    setEditingUser(user);
-    setName(user.name);
-    setEmail(user.email);
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = async (userId: number) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
-    try {
-      await deleteUser(userId.toString());
-    } catch {
-      alert("Failed to delete user");
-    }
-  };
-
-  const handleSave = async () => {
-    if (!editingUser) return;
-    try {
-      await updateUser({
-        userId: editingUser.id.toString(),
-        user: {
-          name,
-          email,
-        },
-      });
-      setIsDialogOpen(false);
-      setEditingUser(null);
-    } catch {
-      alert("Failed to update user");
-    }
-  };
-
-  const handleAddUser = async () => {
-    try {
-      await addUser({ name: addName, email: addEmail });
-      setIsAddDialogOpen(false);
-      setAddName("");
-      setAddEmail("");
-    } catch {
-      alert("Failed to add user");
-    }
-  };
-
-  const handleReset = () => mutate();
+/**
+ * 追加と編集の両方に使うユーザーフォームダイアログ
+ */
+function UserFormDialog({
+  mode,
+  open,
+  values,
+  isSubmitting,
+  onOpenChange,
+  onValueChange,
+  onSubmitAction,
+}: {
+  mode: DialogMode | null;
+  open: boolean;
+  values: UserFormValues;
+  isSubmitting: boolean;
+  onOpenChange: (open: boolean) => void;
+  onValueChange: (key: keyof UserFormValues, value: string) => void;
+  onSubmitAction: (formData: FormData) => void | Promise<void>;
+}) {
+  const title = mode === "edit" ? "ユーザーを編集" : "ユーザーを追加";
+  const submitLabel = mode === "edit" ? "保存" : "追加";
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Users List</h1>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <form className="space-y-4" action={onSubmitAction}>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
 
-      <div className="flex gap-2 mb-4">
-        <Button onClick={() => mutate()}>Refresh</Button>
-        <Button onClick={() => setIsAddDialogOpen(true)}>Add User</Button>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="user-name">Name</Label>
+              <Input
+                id="user-name"
+                name="name"
+                value={values.name}
+                onChange={(event) => onValueChange("name", event.target.value)}
+                disabled={isSubmitting}
+                autoComplete="name"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="user-email">Email</Label>
+              <Input
+                id="user-email"
+                name="email"
+                type="email"
+                value={values.email}
+                onChange={(event) => onValueChange("email", event.target.value)}
+                disabled={isSubmitting}
+                autoComplete="email"
+                required
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              キャンセル
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "保存中..." : submitLabel}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export default function SWRPage() {
+  const { users, error, isLoading, isValidating, mutate } = useUsers();
+  const { addUser, isMutating: isAddingUser } = useAddUser();
+  const { updateUser, isMutating: isUpdatingUser } = useUpdateUser();
+  const { deleteUser, isMutating: isDeletingUser } = useDeleteUser();
+
+  const [dialogMode, setDialogMode] = useState<DialogMode | null>(null);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [formValues, setFormValues] = useState<UserFormValues>(EMPTY_USER_FORM);
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+
+  const isDialogOpen = dialogMode !== null;
+  const isSubmitting = isAddingUser || isUpdatingUser;
+  const isBusy = isSubmitting || isDeletingUser;
+  const isRefreshing = isValidating && !isLoading;
+
+  function resetDialog() {
+    setDialogMode(null);
+    setEditingUserId(null);
+    setFormValues(EMPTY_USER_FORM);
+  }
+
+  function handleDialogOpenChange(open: boolean) {
+    if (open || isSubmitting) {
+      return;
+    }
+
+    resetDialog();
+  }
+
+  function handleCreateClick() {
+    setNotice(null);
+    setDialogMode("create");
+    setEditingUserId(null);
+    setFormValues(EMPTY_USER_FORM);
+  }
+
+  function handleEditClick(user: User) {
+    setNotice(null);
+    setDialogMode("edit");
+    setEditingUserId(user.id);
+    setFormValues({
+      name: user.name,
+      email: user.email,
+    });
+  }
+
+  function handleFormValueChange(key: keyof UserFormValues, value: string) {
+    setFormValues((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
+  async function handleRefresh() {
+    setNotice(null);
+
+    try {
+      await mutate();
+    } catch (refreshError) {
+      setNotice({
+        tone: "error",
+        message: getErrorMessage(refreshError),
+      });
+    }
+  }
+
+  /**
+   * 追加と編集の送信を単一のフォームハンドラで処理する
+   */
+  async function handleSubmit(formData: FormData) {
+    const nextValues = {
+      name: String(formData.get("name") ?? "").trim(),
+      email: String(formData.get("email") ?? "").trim(),
+    };
+
+    if (!nextValues.name || !nextValues.email) {
+      setNotice({
+        tone: "error",
+        message: "名前とメールアドレスを入力してください",
+      });
+      return;
+    }
+
+    setNotice(null);
+
+    try {
+      if (dialogMode === "create") {
+        await addUser(nextValues);
+        setNotice({
+          tone: "success",
+          message: "ユーザーを追加しました",
+        });
+      }
+
+      if (dialogMode === "edit" && editingUserId !== null) {
+        await updateUser({
+          userId: String(editingUserId),
+          user: nextValues,
+        });
+        setNotice({
+          tone: "success",
+          message: "ユーザーを更新しました",
+        });
+      }
+
+      resetDialog();
+    } catch (submitError) {
+      setNotice({
+        tone: "error",
+        message: getErrorMessage(submitError),
+      });
+    }
+  }
+
+  /**
+   * 削除前に確認を取り、成功時は一覧の状態表示も更新する
+   */
+  async function handleDelete(user: User) {
+    const confirmed = window.confirm(`${user.name} を削除しますか`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setNotice(null);
+    setDeletingUserId(user.id);
+
+    try {
+      await deleteUser(String(user.id));
+      setNotice({
+        tone: "success",
+        message: "ユーザーを削除しました",
+      });
+    } catch (deleteError) {
+      setNotice({
+        tone: "error",
+        message: getErrorMessage(deleteError),
+      });
+    } finally {
+      setDeletingUserId(null);
+    }
+  }
+
+  return (
+    <div className="container mx-auto space-y-6 p-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold">SWR Users Demo</h1>
+          <p className="text-sm text-muted-foreground">
+            SWR 2 の標準的な loading / error / mutation フローで CRUD
+            を扱う実装例
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? "再取得中..." : "再取得"}
+          </Button>
+          <Button type="button" onClick={handleCreateClick} disabled={isBusy}>
+            ユーザーを追加
+          </Button>
+        </div>
       </div>
 
-      {/* ErrorBoundary + Suspense：fallback に SVG スケルトンを渡す */}
-      <ErrorBoundary onReset={handleReset}>
-        <Suspense fallback={<UsersLoadingSkeleton count={6} />}>
-          <UsersList onEdit={handleEdit} onDelete={handleDelete} />
-        </Suspense>
-      </ErrorBoundary>
+      {notice ? (
+        <div
+          className={
+            notice.tone === "error"
+              ? "rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+              : "rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
+          }
+        >
+          {notice.message}
+        </div>
+      ) : null}
 
-      {/* Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <section aria-busy={isLoading || isBusy}>
+        {error ? (
+          <UsersErrorState
+            message={getErrorMessage(error)}
+            onRetry={() => void handleRefresh()}
+            isRetrying={isRefreshing}
+          />
+        ) : null}
 
-      {/* Add Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add User</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="addName">Name</Label>
-              <Input
-                id="addName"
-                value={addName}
-                onChange={(e) => setAddName(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="addEmail">Email</Label>
-              <Input
-                id="addEmail"
-                value={addEmail}
-                onChange={(e) => setAddEmail(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddUser}>Add</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        {!error && isLoading && users.length === 0 ? (
+          <UsersLoadingSkeleton count={6} />
+        ) : null}
+
+        {!error && (!isLoading || users.length > 0) ? (
+          <UsersList
+            users={users}
+            onEdit={handleEditClick}
+            onDelete={handleDelete}
+            deletingUserId={deletingUserId}
+            isBusy={isBusy}
+          />
+        ) : null}
+      </section>
+
+      <UserFormDialog
+        mode={dialogMode}
+        open={isDialogOpen}
+        values={formValues}
+        isSubmitting={isSubmitting}
+        onOpenChange={handleDialogOpenChange}
+        onValueChange={handleFormValueChange}
+        onSubmitAction={handleSubmit}
+      />
     </div>
   );
 }
