@@ -4,9 +4,9 @@ import { headers } from "next/headers";
 
 import {
   createContactValidationResult,
-  getClientIp,
   submitContactForm,
 } from "@/lib/forms/contact";
+import { getClientIp } from "@/lib/utils";
 import {
   getContactFormInput,
   type ContactSubmissionResult,
