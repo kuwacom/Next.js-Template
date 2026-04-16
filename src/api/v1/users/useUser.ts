@@ -18,11 +18,6 @@ export function useUser(userId: string | null) {
   const swr = useSWR<User>(
     userId ? userDetailKey(userId, authVersion) : null,
     () => getUserRequest(userId!),
-    {
-      revalidateIfStale: true,
-      revalidateOnMount: true,
-      revalidateOnReconnect: true,
-    }
   );
 
   return {
