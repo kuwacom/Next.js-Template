@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   createContactValidationResult,
   createInvalidJsonResult,
-  getClientIp,
   submitContactForm,
 } from "@/lib/forms/contact";
+import { getClientIp } from "@/lib/utils";
 import { getContactFormInput } from "@/schemas/contact";
 
 export async function POST(request: NextRequest) {
