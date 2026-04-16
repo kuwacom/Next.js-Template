@@ -4,6 +4,64 @@
  */
 
 export interface paths {
+    "/forms/contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit a contact form */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ContactFormRequest"];
+                };
+            };
+            responses: {
+                /** @description Contact form submitted successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ContactSubmissionResult"];
+                    };
+                };
+                /** @description Validation or Turnstile verification failed */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ContactSubmissionResult"];
+                    };
+                };
+                /** @description Server or configuration error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ContactSubmissionResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users": {
         parameters: {
             query?: never;
@@ -217,6 +275,32 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ContactFormRequest: {
+            company: string;
+            /** Format: email */
+            email: string;
+            message: string;
+            name: string;
+            pagePath: string;
+            turnstileToken: string;
+        };
+        ContactFieldErrors: {
+            company?: string;
+            email?: string;
+            message?: string;
+            name?: string;
+            turnstileToken?: string;
+        };
+        /** @enum {string} */
+        ContactSubmissionStatus: "config_error" | "server_error" | "success" | "turnstile_error" | "validation_error";
+        ContactSubmissionResult: {
+            fieldErrors: components["schemas"]["ContactFieldErrors"];
+            message: string;
+            ok: boolean;
+            resetTurnstile: boolean;
+            status: components["schemas"]["ContactSubmissionStatus"];
+            turnstileErrors: string[];
+        };
         User: {
             id: number;
             name: string;

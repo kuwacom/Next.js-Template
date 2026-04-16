@@ -4,6 +4,8 @@ Next.js 16 / React 19 / TypeScript 5 をベースにした Web アプリ用テ�
 
 UI には shadcn/ui と Tailwind CSS v4 を採用し、API 層は `apiClient`・`authStore`・`useSWR` / `useSWRMutation` を組み合わせた構成になっています
 
+バリデーションには `zod` を利用し、フォーム入力や API 入出力の共通スキーマは `src/schemas` にまとめています
+
 themeシステムも組み込まれています
 
 ## 特徴
@@ -71,22 +73,86 @@ ${NEXT_PUBLIC_API_URL}/${NEXT_PUBLIC_API_VERSION}
 
 として組み立てられます
 
+## Cloudflare Turnstile + Discord フォーム
+
+このテンプレートには、Cloudflare Turnstile で BOT 対策しつつ、サーバー側から安全に Discord Webhook を呼び出すフォーム実装を追加しています
+
+### 追加された画面
+
+- `/from/action` Server Action 版
+- `/from/api` API 版
+
+### 追加された API
+
+- `/api/v1/forms/contact` JSON を受け取り、Turnstile を検証して Discord に転送
+
+### 必要な環境変数
+
+```env
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_turnstile_site_key
+CLOUDFLARE_TURNSTILE_SECRET_KEY=your_turnstile_secret_key
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+DISCORD_WEBHOOK_USERNAME=Next.js Contact Form
+DISCORD_WEBHOOK_AVATAR_URL=
+```
+
+- `NEXT_PUBLIC_API_URL` `/from/api` を含む API クライアントのベース URL
+- `NEXT_PUBLIC_API_VERSION` API バージョン。標準では `v1`
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` Turnstile widget 表示用の公開 site key
+- `CLOUDFLARE_TURNSTILE_SECRET_KEY` Siteverify を呼ぶための secret key
+- `DISCORD_WEBHOOK_URL` バックエンドからだけ使う Discord Webhook URL
+- `DISCORD_WEBHOOK_USERNAME` Discord に表示する送信者名
+- `DISCORD_WEBHOOK_AVATAR_URL` Discord に表示するアイコン URL
+
+### `/from/action`
+
+Next.js サーバーが動いていることを前提に、`<form action={serverAction}>` の形で送信する方法です
+
+- 実装場所: `src/app/from/action`
+- 特徴: クライアント側の API 呼び出しコードがほぼ不要
+- 向いている構成: SSR / Route Handlers / Server Actions を含む通常の Next.js サーバー運用
+
+### `/from/api`
+
+ブラウザから同一アプリ内の API へ JSON POST で送信する方法です
+
+- 実装場所: `src/app/from/api`
+- API 本体: `src/app/api/v1/forms/contact/route.ts`
+- フロント側の送信 hook: `src/api/v1/forms/useSubmitContactForm.ts`
+- 向いている構成: Route Handler を含む通常の Next.js サーバー運用
+
+### セキュリティ上のポイント
+
+- Turnstile はクライアント側に置くだけでなく、必ずサーバー側で `Siteverify` を呼んで検証しています
+- Discord Webhook URL は `process.env` からのみ参照し、クライアントへ出していません
+- `/from/api` は同一アプリ内の Next.js API を呼ぶ前提で、追加の CORS 設定は不要です
+- API 呼び出しは `useSWRMutation` と `apiClient` を使い、`users` 系と同じレイヤーにそろえています
+
 ## ディレクトリ構成
 
 ```text
 src/
 ├─ app/
+│  ├─ api/v1/forms/contact/   フォーム送信用 Route Handler
 │  ├─ api/v1/users/           Route Handler
 │  ├─ docs/                   `/docs/*` 配下のルート
-│  ├─ page.tsx                UI コンポーネントのデモ
+│  ├─ from/action/            Server Action フォーム
+│  ├─ from/api/               API フォーム
+│  ├─ page.tsx                ホーム画面
 │  └─ swr/page.tsx            SWR CRUD デモ
 ├─ api/
 │  ├─ apiClient.ts            共通 API クライアント
+│  ├─ cloudflare/             Turnstile 検証 API
+│  ├─ discord/                Discord Webhook API
 │  ├─ fetcher.ts              共通 fetcher
+│  ├─ v1/forms/               contact エンドポイント用 hooks
 │  └─ v1/users/               users エンドポイント用 hooks
 ├─ components/                UI / Provider 群
 ├─ hooks/
 │  └─ useAuth.ts              authStore の React 向け窓口
+├─ lib/forms/
+│  └─ contact.ts              フォーム送信ロジック
+├─ schemas/                   zod スキーマ
 ├─ stores/
 │  └─ authStore.ts            認証状態の外部ストア
 ├─ services/
@@ -504,9 +570,13 @@ npm run generate-types
 ## UI / デモページ
 
 - `src/app/page.tsx`
-  - shadcn/ui コンポーネントの基本デモ
+  - `HomeShowcase` を表示するトップページ
 - `src/app/swr/page.tsx`
   - users API を使った CRUD デモ
+- `src/app/from/action/page.tsx`
+  - Server Action を使ったお問い合わせフォーム
+- `src/app/from/api/page.tsx`
+  - `useSWRMutation` + Route Handler を使ったお問い合わせフォーム
 
 ## テーマ
 
