@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   ArrowRight,
   Blocks,
+  BookOpen,
   Database,
   LayoutTemplate,
   Link2,
@@ -44,6 +45,14 @@ const demoPages = [
       "このトップ画面で、shadcn/ui ベースの主要コンポーネントとテンプレート全体の構成をまとめて確認できます。",
     tags: ["UI", "Overview", "Entry"],
     source: "src/app/page.tsx",
+  },
+  {
+    href: "/docs",
+    title: "MDX Docs System",
+    description:
+      "`content/docs` 配下の記事を一覧化し、`/docs/*` に公開する MDX 記事システムです。",
+    tags: ["MDX", "Docs", "Content"],
+    source: "src/app/docs/page.tsx",
   },
   {
     href: "/swr",
@@ -115,6 +124,18 @@ const implementationGroups = [
       "src/components/ui/label.tsx",
       "src/components/ui/tabs.tsx",
       "src/components/ui/textarea.tsx",
+    ],
+  },
+  {
+    icon: BookOpen,
+    title: "MDX / Docs",
+    description: "MDX ベースの記事システム",
+    items: [
+      "content/docs/",
+      "src/app/docs/page.tsx",
+      "src/app/docs/[...slug]/page.tsx",
+      "src/lib/mdx.ts",
+      "mdx-components.tsx",
     ],
   },
   {
@@ -195,6 +216,7 @@ export function HomeShowcase() {
             <Badge>Next.js Template</Badge>
             <Badge variant="secondary">UI Catalog</Badge>
             <Badge variant="outline">SWR / API / Forms</Badge>
+            <Badge variant="outline">MDX Docs</Badge>
           </div>
 
           <div className="space-y-4">
@@ -204,10 +226,11 @@ export function HomeShowcase() {
             <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
               UI コンポーネントの表示例、各種デモページへのリンク、API と実装ファイルの参照先をまとめて確認できます。
               フォーム専用の入口ではなく、このテンプレート全体の使い方を見渡すためのハブです。
+              あわせて、MDX ベースの記事システムについてもここから追えるようにしています。
             </p>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <Card className="border-white/60 bg-background/80 shadow-sm">
               <CardHeader className="space-y-1">
                 <CardTitle className="text-base">UI Components</CardTitle>
@@ -220,7 +243,15 @@ export function HomeShowcase() {
               <CardHeader className="space-y-1">
                 <CardTitle className="text-base">Demo Routes</CardTitle>
                 <CardDescription>
-                  SWR CRUD, Server Action Form, API Form をすぐ遷移できます
+                  SWR CRUD, Docs, Server Action Form, API Form をすぐ遷移できます
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="border-white/60 bg-background/80 shadow-sm">
+              <CardHeader className="space-y-1">
+                <CardTitle className="text-base">MDX Docs</CardTitle>
+                <CardDescription>
+                  `content/docs` 連携と `/docs/*` 公開導線を確認できます
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -239,6 +270,9 @@ export function HomeShowcase() {
               <Link href="#component-showcase">UI 一覧を見る</Link>
             </Button>
             <Button asChild variant="outline">
+              <Link href="/docs">MDX Docs を開く</Link>
+            </Button>
+            <Button asChild variant="outline">
               <Link href="#implementation-map">実装マップを見る</Link>
             </Button>
             <Button asChild variant="secondary">
@@ -250,6 +284,82 @@ export function HomeShowcase() {
             <Palette className="size-4" />
             テーマ切り替えはヘッダー右上から確認できます。
           </p>
+        </div>
+      </section>
+
+      <section className="space-y-6">
+        <SectionHeading
+          kicker="Branch Feature"
+          title="MDX 記事システム"
+          description="`content/docs` 配下の MDX を記事一覧化し、`/docs/*` として公開する仕組みを確認できます。"
+        />
+
+        <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle>MDX Docs Overview</CardTitle>
+                <SourcePill value="src/lib/mdx.ts" />
+              </div>
+              <CardDescription className="leading-6">
+                `content/docs/**/*.mdx` を走査し、公開 URL、一覧表示、フォルダごとの
+                `index.mdx` 解決までまとめて扱います。
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-muted-foreground">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary">content/docs</Badge>
+                <Badge variant="secondary">/docs</Badge>
+                <Badge variant="secondary">index.mdx</Badge>
+                <Badge variant="secondary">metadata export</Badge>
+              </div>
+              <div className="rounded-xl border border-dashed p-4">
+                <p>公開記事は `src/app/docs/page.tsx` の一覧に集約されます。</p>
+                <p>ネストした記事は `src/app/docs/[...slug]/page.tsx` で描画します。</p>
+                <p>このため、UI テンプレートだけでなくドキュメント起点の構成確認にも使えます。</p>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button asChild className="w-full sm:w-auto">
+                <Link href="/docs" className="flex items-center gap-2">
+                  `/docs` を開く
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle>主な実装ファイル</CardTitle>
+                <SourcePill value="content/docs/" />
+              </div>
+              <CardDescription>
+                MDX システムを追うときの入口です。
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {[
+                  "content/docs/getting-started.mdx",
+                  "content/docs/guides/index.mdx",
+                  "src/app/docs/page.tsx",
+                  "src/app/docs/[...slug]/page.tsx",
+                  "src/lib/mdx.ts",
+                  "mdx-components.tsx",
+                ].map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-start gap-2 rounded-lg border border-dashed px-3 py-2 font-mono text-xs sm:text-sm"
+                  >
+                    <Link2 className="mt-0.5 size-3 shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
