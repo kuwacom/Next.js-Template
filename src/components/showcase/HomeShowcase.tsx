@@ -50,7 +50,7 @@ const demoPages = [
     href: "/docs",
     title: "MDX Docs System",
     description:
-      "`content/docs` 配下の記事を一覧化し、`/docs/*` に公開する MDX 記事システムです。",
+      "`content/docs` 配下の記事を Velite で一覧化し、`/docs/*` に公開する MDX 記事システムです。",
     tags: ["MDX", "Docs", "Content"],
     source: "src/app/docs/page.tsx",
   },
@@ -129,12 +129,14 @@ const implementationGroups = [
   {
     icon: BookOpen,
     title: "MDX / Docs",
-    description: "MDX ベースの記事システム",
+    description: "Velite + MDX ベースの記事システム",
     items: [
       "content/docs/",
+      "velite.config.ts",
       "src/app/docs/page.tsx",
       "src/app/docs/[...slug]/page.tsx",
       "src/lib/mdx.ts",
+      "src/generated/velite/",
       "mdx-components.tsx",
     ],
   },
@@ -291,7 +293,7 @@ export function HomeShowcase() {
         <SectionHeading
           kicker="Branch Feature"
           title="MDX 記事システム"
-          description="`content/docs` 配下の MDX を記事一覧化し、`/docs/*` として公開する仕組みを確認できます。"
+          description="`content/docs` 配下の MDX を Velite で記事一覧化し、`/docs/*` として公開する仕組みを確認できます。"
         />
 
         <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
@@ -302,16 +304,17 @@ export function HomeShowcase() {
                 <SourcePill value="src/lib/mdx.ts" />
               </div>
               <CardDescription className="leading-6">
-                `content/docs/**/*.mdx` を走査し、公開 URL、一覧表示、フォルダごとの
-                `index.mdx` 解決までまとめて扱います。
+                `content/docs/**/*.mdx` を Velite でデータ化し、公開 URL、
+                一覧表示、フォルダごとの `index.mdx` 解決までまとめて扱います。
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-muted-foreground">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary">content/docs</Badge>
+                <Badge variant="secondary">velite</Badge>
                 <Badge variant="secondary">/docs</Badge>
                 <Badge variant="secondary">index.mdx</Badge>
-                <Badge variant="secondary">metadata export</Badge>
+                <Badge variant="secondary">frontmatter</Badge>
               </div>
               <div className="rounded-xl border border-dashed p-4">
                 <p>公開記事は `src/app/docs/page.tsx` の一覧に集約されます。</p>
@@ -344,9 +347,11 @@ export function HomeShowcase() {
                 {[
                   "content/docs/getting-started.mdx",
                   "content/docs/guides/index.mdx",
+                  "velite.config.ts",
                   "src/app/docs/page.tsx",
                   "src/app/docs/[...slug]/page.tsx",
                   "src/lib/mdx.ts",
+                  "src/generated/velite/",
                   "mdx-components.tsx",
                 ].map((item) => (
                   <li

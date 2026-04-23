@@ -110,9 +110,7 @@ export default async function DocDetailPage({ params }: DocPageProps) {
         </div>
       </header>
 
-      <MDXContent>
-        <mdxPage.Content />
-      </MDXContent>
+      <MDXContent code={mdxPage.code} />
     </div>
   );
 }

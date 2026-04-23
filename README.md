@@ -18,7 +18,7 @@ themeシステムも組み込まれています
 - **SWR / SWRMutation** を使ったエンドポイント単位の hook 構成
 - **shadcn/ui + Tailwind CSS v4** による UI 実装
 - **next-themes** によるライト / ダーク / システムテーマ切り替え
-- **`content/docs/` + `@next/mdx`** による記事システム
+- **`content/docs/` + `velite`** による記事システム
 - **`src/proxy.ts`** による API 向け CORS サンプル実装
 
 ## セットアップ
@@ -48,7 +48,9 @@ themeシステムも組み込まれています
 - `npm run dev` 開発サーバーを起動
 - `npm run build` 本番ビルドを作成
 - `npm run start` 本番ビルドを起動
-- `npm run lint` ESLint を実行
+- `npm run lint` Velite 再生成後に ESLint を実行
+- `npm run content:build` Velite の生成物を手動再生成
+- `npm run content:watch` Velite を watch モードで起動
 - `npm run generate-types` `openapi/v1.yaml` から `src/types/v1/openapi.d.ts` を生成
 
 ## 環境変数
@@ -172,7 +174,9 @@ content/docs/
    ├─ index.mdx               フォルダ index サンプル
    └─ writing-docs.mdx        ネスト記事サンプル
 
+src/generated/velite/         Velite 生成物（Git 管理外）
 mdx-components.tsx            MDX 共通コンポーネント定義
+velite.config.ts              Velite のコレクション定義
 DESIGN.md                     AI及び人間用のデザイン指示md
 ```
 
@@ -184,17 +188,19 @@ DESIGN.md                     AI及び人間用のデザイン指示md
   - `content/docs/guides/index.mdx` → `/docs/guides`
   - `content/docs/guides/writing-docs.mdx` → `/docs/guides/writing-docs`
 - 各フォルダに `index.mdx` を置くと、そのフォルダ自身の URL をトップページとして使えます
-- `.mdx` は `@next/mdx` によって Next.js のビルド時にコンパイルされます
-- 各記事の先頭で `metadata` を export してください
+- `.mdx` は Velite によって `src/generated/velite` へ変換され、`next dev` / `next build` 時にも自動再生成されます
+- 各記事の先頭では frontmatter を書いてください
 
 ```mdx
-export const metadata = {
-  title: "記事タイトル",
-  description: "一覧とメタタグに使う説明文",
-  publishedAt: "2026-03-14",
-  tags: ["MDX", "Docs"],
-  draft: false,
-}
+---
+title: 記事タイトル
+description: 一覧とメタタグに使う説明文
+publishedAt: 2026-03-14
+tags:
+  - MDX
+  - Docs
+draft: false
+---
 
 # 見出し
 ```

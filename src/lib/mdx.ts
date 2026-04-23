@@ -1,15 +1,9 @@
 import "server-only";
 
 import type { Metadata } from "next";
-import path from "node:path";
-import { promises as fs } from "node:fs";
 import { cache } from "react";
-import type { ComponentType } from "react";
-import type { MDXComponents } from "mdx/types";
 
-// MDXコンテンツのソース配置先
-// app配下のルーティング実装から切り離して再利用性を高める
-const MDX_SOURCE_DIRECTORY = path.join(process.cwd(), "content", "docs");
+import { docs as generatedDocs } from "@/generated/velite";
 
 // MDX1件に必要なメタ情報の標準形
 export type MDXMetadata = {
@@ -27,18 +21,9 @@ export type MDXSummary = MDXMetadata & {
 };
 
 // 詳細画面向けの完全データ
-// Contentには@next/mdxで変換済みのReact Componentが入る
 export type MDXPage = MDXSummary & {
-  Content: ComponentType<{
-    components?: MDXComponents;
-  }>;
-};
-
-// 走査時に内部で使う最小情報
-type MDXEntry = {
-  slug: string[];
-  slugAsPath: string;
-  importPath: string;
+  isDirectoryIndex: boolean;
+  code: string;
 };
 
 export type MDXDirectoryIndex = MDXSummary & {
@@ -46,14 +31,7 @@ export type MDXDirectoryIndex = MDXSummary & {
   directoryPath: string;
 };
 
-// 各mdxモジュールがexportする構造
-// defaultが本文Component、metadataは任意の静的情報
-type MDXModule = {
-  default: ComponentType<{
-    components?: MDXComponents;
-  }>;
-  metadata?: Partial<MDXMetadata>;
-};
+type GeneratedDocEntry = (typeof generatedDocs)[number];
 
 /**
  * slug の末尾セグメントから、人が読めるフォールバックタイトルを生成します。
@@ -71,7 +49,7 @@ function buildTitleFromSlug(slug: string[]) {
 }
 
 /**
- * MDX モジュールが export した `metadata` を、表示に使いやすい標準形へ正規化します。
+ * Velite が抽出した frontmatter を、表示に使いやすい標準形へ正規化します。
  *
  * 欠損値や型の揺れを吸収し、呼び出し側が個別の null チェックを持たずに済むようにします。
  */
@@ -101,109 +79,59 @@ function normalizeMDXMetadata(
 }
 
 /**
- * `content/docs` 配下を再帰走査し、公開対象の MDX エントリ一覧を収集します。
- *
- * - ディレクトリ構造はそのまま URL 用の slug に変換されます
- * - `index.mdx` は `/docs/foo/index` ではなく `/docs/foo` として扱います
- * - ディレクトリがまだ存在しない場合は空配列を返し、初期状態でも安全に動作します
+ * Velite が生成した path を slug と表示用パスに変換します。
  */
-async function walkMDXDirectory(
-  directory: string,
-  segments: string[] = [],
-): Promise<MDXEntry[]> {
-  const entries = await fs
-    .readdir(directory, { withFileTypes: true })
-    .catch((error: NodeJS.ErrnoException) => {
-      if (error.code === "ENOENT") {
-        return null;
-      }
+function parseGeneratedPath(path: string) {
+  const slug = path.split("/").filter(Boolean);
 
-      throw error;
-    });
-
-  if (!entries) {
-    return [];
-  }
-
-  const discoveredEntries = await Promise.all(
-    entries.map(async (entry) => {
-      const absolutePath = path.join(directory, entry.name);
-
-      // サブディレクトリを再帰的に探索し、slugの前半として保持
-      if (entry.isDirectory()) {
-        return walkMDXDirectory(absolutePath, [...segments, entry.name]);
-      }
-
-      // mdx以外は記事として扱わない
-      if (!entry.isFile() || !entry.name.endsWith(".mdx")) {
-        return [];
-      }
-
-      const fileSlug = entry.name.replace(/\.mdx$/, "");
-      // index.mdx は公開URLでは /docs/foo に寄せるが、import には元のファイル名を使う
-      const slug =
-        fileSlug === "index" ? [...segments] : [...segments, fileSlug];
-      const importPath = [...segments, fileSlug].join("/");
-
-      if (slug.length === 0) {
-        // app 下でベースページを実装する前提のため
-        // content/docs/index.mdx は現状サポート対象外として一覧から除外する
-        return [];
-      }
-
-      return [
-        {
-          slug,
-          slugAsPath: slug.join("/"),
-          importPath,
-        },
-      ];
-    }),
-  );
-
-  return discoveredEntries.flat();
+  return {
+    slug,
+    slugAsPath: slug.join("/"),
+  };
 }
 
 /**
- * MDX ファイル走査結果をキャッシュ付きで取得します。
- *
- * 同一リクエスト中の重複 I/O を抑えつつ、`slugAsPath` 順に並べて安定した結果を返します。
+ * Velite の生成物を、アプリ側で扱いやすい標準形へ寄せます。
  */
-const getMDXEntries = cache(async () => {
-  const entries = await walkMDXDirectory(MDX_SOURCE_DIRECTORY);
+function normalizeGeneratedDocEntry(entry: GeneratedDocEntry): MDXPage | null {
+  const parsedPath = parseGeneratedPath(entry.path);
+  const parsedSourcePath = parseGeneratedPath(entry.sourcePath);
 
-  return entries.sort((left, right) =>
-    left.slugAsPath.localeCompare(right.slugAsPath),
-  );
-});
+  if (parsedPath.slug.length === 0 || parsedSourcePath.slug.length === 0) {
+    return null;
+  }
 
-/**
- * `@next/mdx` によってビルド対象になった MDX モジュールを動的 import します。
- *
- * `slugAsPath` ではなく実ファイル基準の `importPath` を受け取ることで、
- * `guides/index.mdx` のようなファイルも `/docs/guides` として公開できます。
- */
-const importMDXModule = cache(
-  async (importPath: string): Promise<MDXModule> => {
-    return (await import(`@mdx-content/${importPath}.mdx`)) as MDXModule;
-  },
-);
-
-/**
- * 1 件の MDX エントリを読み込み、画面表示用の完全なページデータへ変換します。
- *
- * 本文コンポーネントと正規化済み metadata をここで結合します。
- */
-const loadMDXPage = cache(async (entry: MDXEntry): Promise<MDXPage> => {
-  const mdxModule = await importMDXModule(entry.importPath);
+  const isDirectoryIndex =
+    parsedSourcePath.slug.at(-1) === "index" &&
+    parsedSourcePath.slug.length > 1;
 
   return {
-    ...normalizeMDXMetadata(mdxModule.metadata, entry.slug),
-    slug: entry.slug,
-    slugAsPath: entry.slugAsPath,
-    Content: mdxModule.default,
+    ...normalizeMDXMetadata(
+      {
+        title: entry.title,
+        description: entry.description,
+        publishedAt: entry.publishedAt,
+        tags: entry.tags,
+        draft: entry.draft,
+      },
+      parsedPath.slug,
+    ),
+    slug: parsedPath.slug,
+    slugAsPath: parsedPath.slugAsPath,
+    isDirectoryIndex,
+    code: entry.code,
   };
-});
+}
+
+const normalizedMDXPages = generatedDocs
+  .map((entry) => normalizeGeneratedDocEntry(entry))
+  .filter((entry): entry is MDXPage => entry !== null);
+
+const getMDXPages = cache(() =>
+  [...normalizedMDXPages].sort((left, right) =>
+    left.slugAsPath.localeCompare(right.slugAsPath),
+  ),
+);
 
 /**
  * 公開対象の MDX 記事一覧を取得します。
@@ -213,12 +141,7 @@ const loadMDXPage = cache(async (entry: MDXEntry): Promise<MDXPage> => {
  * - 同日の場合はタイトル順で安定化します
  */
 export const getAllMDXContent = cache(async (): Promise<MDXSummary[]> => {
-  const entries = await getMDXEntries();
-  const mdxPages = await Promise.all(
-    entries.map((entry) => loadMDXPage(entry)),
-  );
-
-  return mdxPages
+  return getMDXPages()
     .filter((mdxPage) => !mdxPage.draft)
     .sort((left, right) => {
       const byDate =
@@ -246,17 +169,15 @@ export const getAllMDXContent = cache(async (): Promise<MDXSummary[]> => {
  */
 export async function getMDXBySlug(slug: string[]): Promise<MDXPage | null> {
   const slugAsPath = slug.join("/");
-  const matchingEntry = (await getMDXEntries()).find(
-    (entry) => entry.slugAsPath === slugAsPath,
+  const matchingEntry = getMDXPages().find(
+    (mdxPage) => mdxPage.slugAsPath === slugAsPath,
   );
 
   if (!matchingEntry) {
     return null;
   }
 
-  const mdxPage = await loadMDXPage(matchingEntry);
-
-  return mdxPage.draft ? null : mdxPage;
+  return matchingEntry.draft ? null : matchingEntry;
 }
 
 /**
@@ -266,29 +187,22 @@ export async function getMDXBySlug(slug: string[]): Promise<MDXPage | null> {
  */
 export const getMDXDirectoryIndexes = cache(
   async (): Promise<MDXDirectoryIndex[]> => {
-    const mdxPages = await getAllMDXContent();
-
-    return mdxPages
+    return getMDXPages()
+      .filter((mdxPage) => !mdxPage.draft && mdxPage.isDirectoryIndex)
       .map((mdxPage) => {
-        const fileName = mdxPage.slugAsPath.split("/").at(-1);
-        const isDirectoryIndex = fileName === "index";
-        // guides/index.mdx のようなファイルから、フォルダ自体のURL情報を作る
-        const directorySlug = isDirectoryIndex
-          ? mdxPage.slug
-          : mdxPage.slug.slice(0, -1);
+        const directorySlug = mdxPage.slug;
 
         return {
-          ...mdxPage,
+          title: mdxPage.title,
+          description: mdxPage.description,
+          publishedAt: mdxPage.publishedAt,
+          tags: mdxPage.tags,
+          draft: mdxPage.draft,
+          slug: mdxPage.slug,
+          slugAsPath: mdxPage.slugAsPath,
           directorySlug,
           directoryPath: directorySlug.join("/"),
         };
-      })
-      .filter((mdxPage): mdxPage is MDXDirectoryIndex => {
-        // フォルダ配下の index.mdx だけを「フォルダ index」として扱う
-        return (
-          mdxPage.directorySlug.length > 0 &&
-          mdxPage.slugAsPath.endsWith("/index")
-        );
       })
       .sort((left, right) =>
         left.directoryPath.localeCompare(right.directoryPath),
@@ -312,7 +226,7 @@ export async function getMDXStaticParams() {
  * @param basePath ルートパス。既定値は `/docs`
  */
 export function buildMDXHref(slug: string[], basePath: string = "/docs") {
-  return `${basePath}/${slug.join("/")}`;
+  return slug.length > 0 ? `${basePath}/${slug.join("/")}` : basePath;
 }
 
 /**
