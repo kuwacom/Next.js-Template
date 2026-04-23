@@ -6,6 +6,17 @@ UI には shadcn/ui と Tailwind CSS v4 を採用し、API 層は `apiClient`・
 
 themeシステムも組み込まれています
 
+## ブランチ構成
+
+このリポジトリでは、`main` をベースに用途ごとの拡張をブランチ単位で管理しています
+
+| ブランチ | 追加される構成 | こんなときに向いています |
+| --- | --- | --- |
+| `main` | 認証 UI、SWR ベースの API クライアント、OpenAPI 型生成、テーマ切り替え、Cloudflare Turnstile + Discord フォーム | Next.js のベーステンプレートから機能を選んで拡張したいとき |
+| `feature/mdx` | `content/docs/` と `@next/mdx` を使ったドキュメント / ブログ構成 | App Router 上でシンプルに MDX 記事を配信したいとき |
+| `feature/mdx-i18n` | `next-intl` による多言語ルーティングと、ロケール対応した MDX / フォーム構成 | 日本語 / 英語など複数言語に対応したサイトを始めたいとき |
+| `feature/mdx-velite` | `content/docs/` と `velite` を使ったビルド時コンテンツ生成構成 | MDX を型安全に管理しつつ静的コンテンツを運用したいとき |
+
 ## 特徴
 
 - **Next.js 16 + React 19**
