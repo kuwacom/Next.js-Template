@@ -1,28 +1,33 @@
-import { users } from "@/services/UserService";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+import {
+  apiError,
+  apiHandler,
+  ErrorCode,
+  readJsonBody,
+} from "@/lib/apiError";
+import { userRequestSchema } from "@/schemas/user";
+import { users } from "@/services/UserService";
+
+export const GET = apiHandler(async () => {
   return NextResponse.json(users);
-}
+});
 
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { name, email } = body;
+export const POST = apiHandler(async (request: NextRequest) => {
+  const body = await readJsonBody(request);
+  const validation = userRequestSchema.safeParse(body);
 
-  if (!name || !email) {
-    return NextResponse.json(
-      { error: "Name and email are required" },
-      { status: 400 }
-    );
+  if (!validation.success) {
+    throw apiError(ErrorCode.VALIDATION_ERROR, validation.error.issues);
   }
 
   const newUser = {
     id: users.length > 0 ? users[users.length - 1].id + 1 : 1,
-    name,
-    email,
+    name: validation.data.name,
+    email: validation.data.email,
   };
 
   users.push(newUser);
 
   return NextResponse.json(newUser, { status: 201 });
-}
+});
