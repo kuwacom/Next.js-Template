@@ -2,6 +2,7 @@
 
 import { apiClient } from "@/api/apiClient";
 import { useAuth } from "@/hooks/useAuth";
+import { ApiResultError } from "@/lib/apiError";
 import { DeleteUserResponse, User } from "@/types/v1/api";
 import { useSWRConfig } from "swr";
 import useSWRMutation from "swr/mutation";
@@ -21,14 +22,16 @@ export function useDeleteUser() {
   const { mutate } = useSWRConfig();
   const mutation = useSWRMutation<
     DeleteUserResponse,
-    Error,
+    ApiResultError | Error,
     ReturnType<typeof deleteUserKey>,
     string
   >(deleteUserKey(authVersion), async (_key, { arg }) =>
     deleteUserRequest(arg),
   );
 
-  const deleteUser = async (userId: string) => {
+  const deleteUser = async (
+    userId: string,
+  ): Promise<DeleteUserResponse> => {
     const deletedUser = await mutation.trigger(userId);
 
     // cacheを変更しないで再取得する場合

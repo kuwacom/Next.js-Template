@@ -7,6 +7,7 @@ import {
   useUpdateUser,
   useUsers,
 } from "@/api/v1/users";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,6 +19,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  ApiResultError,
+  ErrorCode,
+  isApiResultError,
+} from "@/lib/apiError";
 import { User } from "@/types/v1/api";
 
 type DialogMode = "create" | "edit";
@@ -30,6 +36,7 @@ type UserFormValues = {
 type Notice = {
   tone: "success" | "error";
   message: string;
+  error?: unknown;
 };
 
 const EMPTY_USER_FORM: UserFormValues = {
@@ -41,11 +48,80 @@ const EMPTY_USER_FORM: UserFormValues = {
  * 表示用のエラーメッセージへ正規化する
  */
 function getErrorMessage(error: unknown) {
+  if (isApiResultError(error)) {
+    switch (error.code) {
+      case ErrorCode.VALIDATION_ERROR:
+        return "入力内容を確認してください";
+      case ErrorCode.UNAUTHORIZED:
+        return "ログインが必要です";
+      case ErrorCode.FORBIDDEN:
+        return "操作する権限がありません";
+      case ErrorCode.NOT_FOUND:
+        return "対象のユーザーが見つかりません";
+      default:
+        return error.message;
+    }
+  }
+
   if (error instanceof Error && error.message) {
     return error.message;
   }
 
   return "ユーザー情報の取得に失敗しました";
+}
+
+function getErrorTitle(error: unknown) {
+  return isApiResultError(error) ? "API エラー" : "リクエストエラー";
+}
+
+function getApiErrorDetails(error: ApiResultError) {
+  if (error.details === undefined) {
+    return null;
+  }
+
+  if (typeof error.details === "string") {
+    return error.details;
+  }
+
+  return JSON.stringify(error.details, null, 2);
+}
+
+/**
+ * API の共通エラーと通信エラーを同じ見た目で扱う
+ */
+function ErrorSummary({
+  error,
+  message,
+}: {
+  error: unknown;
+  message?: string;
+}) {
+  const apiError = isApiResultError(error) ? error : null;
+  const details = apiError ? getApiErrorDetails(apiError) : null;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant={apiError ? "destructive" : "secondary"}>
+          {getErrorTitle(error)}
+        </Badge>
+        {apiError ? (
+          <>
+            <Badge variant="outline">{apiError.code}</Badge>
+            <Badge variant="outline">HTTP {apiError.status}</Badge>
+          </>
+        ) : null}
+      </div>
+      <p className="text-sm text-muted-foreground">
+        {message ?? getErrorMessage(error)}
+      </p>
+      {details ? (
+        <pre className="max-h-40 overflow-auto rounded-md border bg-muted/40 p-3 text-xs">
+          {details}
+        </pre>
+      ) : null}
+    </div>
+  );
 }
 
 /**
@@ -120,11 +196,11 @@ function UsersLoadingSkeleton({ count = 6 }: { count?: number }) {
  * 一覧取得エラー時の再試行 UI
  */
 function UsersErrorState({
-  message,
+  error,
   onRetry,
   isRetrying,
 }: {
-  message: string;
+  error: unknown;
   onRetry: () => void;
   isRetrying: boolean;
 }) {
@@ -134,7 +210,7 @@ function UsersErrorState({
         <CardTitle>ユーザー一覧を読み込めませんでした</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">{message}</p>
+        <ErrorSummary error={error} />
         <div className="flex gap-2">
           <Button onClick={onRetry} disabled={isRetrying}>
             {isRetrying ? "再取得中..." : "再試行"}
@@ -302,9 +378,21 @@ function UserFormDialog({
 
 export default function SWRPage() {
   const { users, error, isLoading, isValidating, mutate } = useUsers();
-  const { addUser, isMutating: isAddingUser } = useAddUser();
-  const { updateUser, isMutating: isUpdatingUser } = useUpdateUser();
-  const { deleteUser, isMutating: isDeletingUser } = useDeleteUser();
+  const {
+    addUser,
+    error: addUserError,
+    isMutating: isAddingUser,
+  } = useAddUser();
+  const {
+    updateUser,
+    error: updateUserError,
+    isMutating: isUpdatingUser,
+  } = useUpdateUser();
+  const {
+    deleteUser,
+    error: deleteUserError,
+    isMutating: isDeletingUser,
+  } = useDeleteUser();
 
   const [dialogMode, setDialogMode] = useState<DialogMode | null>(null);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
@@ -316,6 +404,7 @@ export default function SWRPage() {
   const isSubmitting = isAddingUser || isUpdatingUser;
   const isBusy = isSubmitting || isDeletingUser;
   const isRefreshing = isValidating && !isLoading;
+  const mutationError = addUserError ?? updateUserError ?? deleteUserError;
 
   function resetDialog() {
     setDialogMode(null);
@@ -364,6 +453,7 @@ export default function SWRPage() {
       setNotice({
         tone: "error",
         message: getErrorMessage(refreshError),
+        error: refreshError,
       });
     }
   }
@@ -412,6 +502,7 @@ export default function SWRPage() {
       setNotice({
         tone: "error",
         message: getErrorMessage(submitError),
+        error: submitError,
       });
     }
   }
@@ -439,6 +530,7 @@ export default function SWRPage() {
       setNotice({
         tone: "error",
         message: getErrorMessage(deleteError),
+        error: deleteError,
       });
     } finally {
       setDeletingUserId(null);
@@ -479,14 +571,24 @@ export default function SWRPage() {
               : "rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
           }
         >
-          {notice.message}
+          {notice.tone === "error" && notice.error ? (
+            <ErrorSummary error={notice.error} message={notice.message} />
+          ) : (
+            notice.message
+          )}
+        </div>
+      ) : null}
+
+      {!notice && mutationError ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <ErrorSummary error={mutationError} />
         </div>
       ) : null}
 
       <section aria-busy={isLoading || isBusy}>
         {error ? (
           <UsersErrorState
-            message={getErrorMessage(error)}
+            error={error}
             onRetry={() => void handleRefresh()}
             isRetrying={isRefreshing}
           />

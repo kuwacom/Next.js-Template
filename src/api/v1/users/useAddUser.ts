@@ -2,6 +2,7 @@
 
 import { apiClient } from "@/api/apiClient";
 import { useAuth } from "@/hooks/useAuth";
+import { ApiResultError } from "@/lib/apiError";
 import { User, UserRequest, UserResponse } from "@/types/v1/api";
 import { useSWRConfig } from "swr";
 import useSWRMutation from "swr/mutation";
@@ -20,12 +21,12 @@ export function useAddUser() {
   const { mutate } = useSWRConfig();
   const mutation = useSWRMutation<
     User,
-    Error,
+    ApiResultError | Error,
     ReturnType<typeof addUserKey>,
     UserRequest
   >(addUserKey(authVersion), async (_key, { arg }) => addUserRequest(arg));
 
-  const addUser = async (user: UserRequest) => {
+  const addUser = async (user: UserRequest): Promise<User> => {
     const createdUser = await mutation.trigger(user);
 
     // cacheを変更しないで再取得する場合
@@ -33,7 +34,7 @@ export function useAddUser() {
 
     await mutate(
       usersListKey(authVersion),
-      (currentUsers = []) => [...currentUsers, createdUser],
+      (currentUsers: User[] = []) => [...currentUsers, createdUser],
       {
         revalidate: false,
       },
