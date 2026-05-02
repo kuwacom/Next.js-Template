@@ -120,7 +120,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
+                        "application/json": components["schemas"]["ApiErrorResponse"];
                     };
                 };
             };
@@ -165,7 +165,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
+                        "application/json": components["schemas"]["ApiErrorResponse"];
                     };
                 };
                 /** @description User not found */
@@ -174,7 +174,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
+                        "application/json": components["schemas"]["ApiErrorResponse"];
                     };
                 };
             };
@@ -210,7 +210,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
+                        "application/json": components["schemas"]["ApiErrorResponse"];
                     };
                 };
                 /** @description User not found */
@@ -219,7 +219,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
+                        "application/json": components["schemas"]["ApiErrorResponse"];
                     };
                 };
             };
@@ -252,7 +252,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
+                        "application/json": components["schemas"]["ApiErrorResponse"];
                     };
                 };
                 /** @description User not found */
@@ -261,7 +261,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
+                        "application/json": components["schemas"]["ApiErrorResponse"];
                     };
                 };
             };
@@ -314,8 +314,26 @@ export interface components {
             message: string;
             user: components["schemas"]["User"];
         };
+        ApiErrorResponse: components["schemas"]["ValidationErrorResponse"] | components["schemas"]["ErrorResponse"];
+        ValidationErrorResponse: {
+            /** @enum {string} */
+            code: "VALIDATION_ERROR";
+            /** @example Validation failed */
+            message: string;
+            details: components["schemas"]["ZodIssue"][];
+        };
         ErrorResponse: {
-            error: string;
+            /** @enum {string} */
+            code: "NOT_FOUND" | "UNAUTHORIZED" | "FORBIDDEN" | "CONFLICT" | "INTERNAL_SERVER_ERROR";
+            /** @example User not found */
+            message: string;
+        };
+        ZodIssue: {
+            code: string;
+            message: string;
+            path: (string | number)[];
+        } & {
+            [key: string]: unknown;
         };
     };
     responses: never;
