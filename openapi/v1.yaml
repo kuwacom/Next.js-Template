@@ -275,7 +275,20 @@ components:
     ErrorResponse:
       type: object
       properties:
-        error:
+        code:
           type: string
+          enum:
+            - VALIDATION_ERROR
+            - NOT_FOUND
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - CONFLICT
+            - INTERNAL_SERVER_ERROR
+        message:
+          type: string
+          example: User not found
+        details:
+          description: バリデーションエラーの詳細など
       required:
-        - error
+        - code
+        - message

@@ -317,7 +317,12 @@ export interface components {
             user: components["schemas"]["User"];
         };
         ErrorResponse: {
-            error: string;
+            /** @enum {string} */
+            code: "VALIDATION_ERROR" | "NOT_FOUND" | "UNAUTHORIZED" | "FORBIDDEN" | "CONFLICT" | "INTERNAL_SERVER_ERROR";
+            /** @example User not found */
+            message: string;
+            /** @description バリデーションエラーの詳細など */
+            details?: unknown;
         };
     };
     responses: never;

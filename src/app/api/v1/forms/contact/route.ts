@@ -5,10 +5,11 @@ import {
   createInvalidJsonResult,
   submitContactForm,
 } from "@/lib/forms/contact";
+import { apiHandler } from "@/lib/apiError";
 import { getClientIp } from "@/lib/utils";
 import { getContactFormInput } from "@/schemas/contact";
 
-export async function POST(request: NextRequest) {
+export const POST = apiHandler(async (request: NextRequest) => {
   const body = (await request.json().catch(() => null)) as {
     company?: string | null;
     email?: string | null;
@@ -61,4 +62,4 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(result, {
     status,
   });
-}
+});
