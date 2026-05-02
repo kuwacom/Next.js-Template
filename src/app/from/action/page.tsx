@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import env from "@/config/env";
 import {
   Card,
   CardContent,
@@ -32,7 +33,7 @@ export default function ActionFormPage() {
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <ActionContactForm
           submitAction={submitContactAction}
-          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+          siteKey={env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
         />
 
         <Card className="border-border/60 shadow-sm">
