@@ -1,4 +1,5 @@
 import { createApiClient } from "@/api/apiClient";
+import serverEnv from "@/config/serverEnv";
 import {
   turnstileSiteVerifyRequestSchema,
   turnstileSiteVerifyResponseSchema,
@@ -18,7 +19,7 @@ export async function verifyTurnstileToken(input: {
   ipAddress: string | null;
   token: string;
 }) {
-  const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
+  const secretKey = serverEnv.CLOUDFLARE_TURNSTILE_SECRET_KEY;
 
   if (!secretKey) {
     return {
