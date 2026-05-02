@@ -26,6 +26,44 @@ export interface ApiErrorResponse {
 }
 
 /**
+ * # ApiResultError
+ * SWR の error に乗せる API 共通エラーレスポンス
+ *
+ * ### 特徴
+ * - ErrorCode でエラー種別を型安全に分岐できる
+ * - API から返されたエラーレスポンスだけを表す
+ */
+export class ApiResultError extends Error {
+  public readonly status: number;
+  public readonly code: ErrorCode;
+  public readonly details?: unknown;
+
+  public constructor(
+    status: number,
+    code: ErrorCode,
+    message: string,
+    details?: unknown,
+  ) {
+    super(message);
+    this.name = "ApiResultError";
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
+}
+
+/**
+ * ### isApiResultError
+ * 捕捉したエラーが ApiResultError かどうかを判定する
+ *
+ * @param err - 判定対象
+ * @returns ApiResultError の場合 true
+ */
+export function isApiResultError(err: unknown): err is ApiResultError {
+  return err instanceof ApiResultError;
+}
+
+/**
  * # ApiError
  * API レスポンスとして返せる情報を持つ共通エラー
  *

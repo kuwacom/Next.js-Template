@@ -1,6 +1,7 @@
 "use client";
 
-import { APIError, apiClient } from "@/api/apiClient";
+import { apiClient } from "@/api/apiClient";
+import { ApiResultError } from "@/lib/apiError";
 import {
   contactApiRequestSchema,
   contactSubmissionResultSchema,
@@ -28,8 +29,8 @@ async function submitContactFormRequest(
 
     return response.data!;
   } catch (error) {
-    if (error instanceof APIError) {
-      const parsed = contactSubmissionResultSchema.safeParse(error.data);
+    if (error instanceof ApiResultError) {
+      const parsed = contactSubmissionResultSchema.safeParse(error.details);
 
       if (parsed.success) {
         return parsed.data;
@@ -43,7 +44,7 @@ async function submitContactFormRequest(
 export function useSubmitContactForm() {
   const mutation = useSWRMutation<
     ContactSubmissionResult,
-    Error,
+    ApiResultError | Error,
     ReturnType<typeof submitContactFormKey>,
     ContactFormRequest
   >(submitContactFormKey(), async (_key, { arg }) =>
