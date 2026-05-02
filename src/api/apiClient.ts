@@ -25,17 +25,34 @@ type ApiClientResult<T, U> =
   | { data: T; error?: undefined }
   | { data?: undefined; error: U };
 
+function isErrorCode(code: unknown): code is ApiErrorResponse["code"] {
+  return Object.values(ErrorCode).some((value) => value === code);
+}
+
 function isApiErrorResponse(data: unknown): data is ApiErrorResponse {
   if (data == null || typeof data !== "object") {
     return false;
   }
 
-  const candidate = data as Partial<ApiErrorResponse>;
-  return (
-    typeof candidate.code === "string" &&
-    Object.values(ErrorCode).includes(candidate.code) &&
-    typeof candidate.message === "string"
-  );
+  const candidate = data as {
+    code?: unknown;
+    details?: unknown;
+    message?: unknown;
+  };
+
+  if (
+    typeof candidate.code !== "string" ||
+    !isErrorCode(candidate.code) ||
+    typeof candidate.message !== "string"
+  ) {
+    return false;
+  }
+
+  if (candidate.code === ErrorCode.VALIDATION_ERROR) {
+    return Array.isArray(candidate.details);
+  }
+
+  return true;
 }
 
 function createApiResultError(
@@ -44,14 +61,18 @@ function createApiResultError(
   fallbackMessage: string,
 ) {
   if (isApiErrorResponse(data)) {
-    return new ApiResultError(status, data.code, data.message, data.details);
+    return new ApiResultError(
+      status,
+      data.code,
+      data.message,
+      data.code === ErrorCode.VALIDATION_ERROR ? data.details : undefined,
+    );
   }
 
   return new ApiResultError(
     status,
     ErrorCode.INTERNAL_SERVER_ERROR,
     fallbackMessage,
-    data,
   );
 }
 

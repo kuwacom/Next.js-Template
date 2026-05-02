@@ -17,9 +17,11 @@
 class ApiResultError extends Error {
   status: number;
   code: ErrorCode;
-  details?: unknown;
+  details?: ZodIssue[];
 }
 ```
+
+`details` は `code === ErrorCode.VALIDATION_ERROR` の場合だけ入る。その他の API エラーでは `details` は入らない
 
 API エラーかどうかを判定したい場合は `isApiResultError(error)` を使う
 
@@ -36,7 +38,7 @@ if (isApiResultError(error)) {
 `apiClient` は HTTP エラーを次のように扱う
 
 - レスポンス body が `ApiErrorResponse` の場合は `ApiResultError` を throw する
-- レスポンス body が共通形式ではない場合は `INTERNAL_SERVER_ERROR` の `ApiResultError` を throw し、元 body を `details` に入れる
+- レスポンス body が共通形式ではない場合は `INTERNAL_SERVER_ERROR` の `ApiResultError` を throw する
 - ネットワークエラーや timeout は通常の `Error` を throw する
 
 これにより、API が返した業務エラーと、通信や実行環境のエラーを区別できる
@@ -136,6 +138,8 @@ function getErrorMessage(error: unknown) {
 ```
 
 `src/app/swr/page.tsx` はこの方針のデモになっている。API 共通エラーでは `code` / `status` / `details` を表示し、通常の `Error` はリクエストエラーとして表示する
+
+`details` は validation error の Zod issue 配列なので、入力フォームに紐付ける場合は `path` と `message` を使って field error へ変換する
 
 ## 使い分け
 
