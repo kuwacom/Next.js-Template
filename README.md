@@ -72,11 +72,13 @@ themeシステムも組み込まれています
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
 NEXT_PUBLIC_API_VERSION=v1
 LOG_LEVEL=3
+NEXT_PUBLIC_LOG_LEVEL=5
 ```
 
 - `NEXT_PUBLIC_API_URL` API のベース URL
 - `NEXT_PUBLIC_API_VERSION` API バージョン
-- `LOG_LEVEL` `tslog` のログレベル
+- `LOG_LEVEL` サーバー側 `tslog` のログレベル
+- `NEXT_PUBLIC_LOG_LEVEL` クライアント側 `tslog` のログレベル
 
 最終的な API ベース URL は
 
@@ -137,7 +139,7 @@ Next.js サーバーが動いていることを前提に、`<form action={server
 ### セキュリティ上のポイント
 
 - Turnstile はクライアント側に置くだけでなく、必ずサーバー側で `Siteverify` を呼んで検証しています
-- Discord Webhook URL は `process.env` からのみ参照し、クライアントへ出していません
+- Discord Webhook URL は `src/config/serverEnv.ts` からのみ参照し、クライアントへ出していません
 - `/from/api` は同一アプリ内の Next.js API を呼ぶ前提で、追加の CORS 設定は不要です
 - API 呼び出しは `useSWRMutation` と `apiClient` を使い、`users` 系と同じレイヤーにそろえています
 
@@ -352,6 +354,7 @@ NEXTJS_ENV=development
 NEXT_PUBLIC_API_URL=/api
 NEXT_PUBLIC_API_VERSION=v1
 LOG_LEVEL=3
+NEXT_PUBLIC_LOG_LEVEL=5
 ```
 
 ### 2. SSR / API Routes ありで dashboard の Git 連携中心に運用する場合
@@ -421,6 +424,7 @@ export default nextConfig;
 NEXT_PUBLIC_API_URL=https://api.example.com/api
 NEXT_PUBLIC_API_VERSION=v1
 LOG_LEVEL=3
+NEXT_PUBLIC_LOG_LEVEL=5
 ```
 
 #### dashboard 側の設定
