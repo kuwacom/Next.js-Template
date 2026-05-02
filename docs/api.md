@@ -7,12 +7,21 @@ Next.js の Route Handler で返すエラーレスポンスは、`src/lib/apiErr
 API のエラー JSON は次の形式に揃える
 
 ```ts
-type ApiErrorResponse = {
-  code: ErrorCode;
-  message: string;
-  details?: unknown;
-};
+type ValidationErrorDetails = ZodIssue[];
+
+type ApiErrorResponse =
+  | {
+      code: typeof ErrorCode.VALIDATION_ERROR;
+      message: string;
+      details: ValidationErrorDetails;
+    }
+  | {
+      code: Exclude<ErrorCode, typeof ErrorCode.VALIDATION_ERROR>;
+      message: string;
+    };
 ```
+
+`details` は `VALIDATION_ERROR` の場合だけ付ける。その他のエラーでは `details` を返さない
 
 `ErrorCode` はバックエンドと同じ固定値を使う
 
@@ -43,7 +52,7 @@ if (!user) {
 }
 ```
 
-バリデーションは Zod の `safeParse` を使い、失敗時は `details` に `issues` を入れる
+バリデーションは Zod の `safeParse` を使い、失敗時は `details` に `validation.error.issues` を入れる
 
 ```ts
 const validation = userRequestSchema.safeParse(body);
@@ -53,7 +62,7 @@ if (!validation.success) {
 }
 ```
 
-JSON body の読み取りは `readJsonBody(request)` を使う。JSON parse に失敗した場合も `VALIDATION_ERROR` として返す
+JSON body の読み取りは `readJsonBody(request)` を使う。JSON parse に失敗した場合も `VALIDATION_ERROR` として返し、`details` には Zod issue と同じ形の `custom` issue を入れる
 
 ## apiHandler の責務
 
@@ -82,16 +91,36 @@ export const POST = apiHandler(async (request: NextRequest) => {
 
 ## OpenAPI
 
-`openapi/v1.yaml` の `ErrorResponse` は `ApiErrorResponse` と同じ形にする
+`openapi/v1.yaml` の `ApiErrorResponse` は `VALIDATION_ERROR` とその他の `ErrorResponse` を `oneOf` で分ける
 
 ```yaml
-ErrorResponse:
+ApiErrorResponse:
+  oneOf:
+    - $ref: '#/components/schemas/ValidationErrorResponse'
+    - $ref: '#/components/schemas/ErrorResponse'
+ValidationErrorResponse:
   type: object
   properties:
     code:
       type: string
       enum:
         - VALIDATION_ERROR
+    message:
+      type: string
+    details:
+      type: array
+      items:
+        $ref: '#/components/schemas/ZodIssue'
+  required:
+    - code
+    - message
+    - details
+ErrorResponse:
+  type: object
+  properties:
+    code:
+      type: string
+      enum:
         - NOT_FOUND
         - UNAUTHORIZED
         - FORBIDDEN
@@ -99,8 +128,6 @@ ErrorResponse:
         - INTERNAL_SERVER_ERROR
     message:
       type: string
-    details:
-      description: バリデーションエラーの詳細など
   required:
     - code
     - message

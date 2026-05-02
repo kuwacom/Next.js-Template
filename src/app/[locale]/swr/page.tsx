@@ -34,6 +34,8 @@ type UserFormValues = {
   email: string;
 };
 
+type UserFieldErrors = Partial<Record<keyof UserFormValues, string>>;
+
 type Notice = {
   tone: "success" | "error";
   message: string;
@@ -57,6 +59,8 @@ const EMPTY_USER_FORM: UserFormValues = {
   name: "",
   email: "",
 };
+
+const USER_FORM_FIELD_KEYS = ["name", "email"] as const;
 
 function getErrorMessage(error: unknown, messages: ErrorMessages) {
   if (isApiResultError(error)) {
@@ -95,6 +99,46 @@ function getApiErrorDetails(error: ApiResultError) {
   }
 
   return JSON.stringify(error.details, null, 2);
+}
+
+function isUserFormFieldName(value: unknown): value is keyof UserFormValues {
+  return (
+    typeof value === "string" &&
+    USER_FORM_FIELD_KEYS.some((fieldName) => fieldName === value)
+  );
+}
+
+function getValidationFieldErrors(error: unknown): UserFieldErrors {
+  if (
+    !isApiResultError(error) ||
+    error.code !== ErrorCode.VALIDATION_ERROR ||
+    !Array.isArray(error.details)
+  ) {
+    return {};
+  }
+
+  return error.details.reduce<UserFieldErrors>((fieldErrors, issue) => {
+    if (typeof issue !== "object" || issue == null) {
+      return fieldErrors;
+    }
+
+    const candidate = issue as {
+      message?: unknown;
+      path?: unknown;
+    };
+
+    if (!Array.isArray(candidate.path) || typeof candidate.message !== "string") {
+      return fieldErrors;
+    }
+
+    const fieldName = candidate.path[0];
+
+    if (isUserFormFieldName(fieldName)) {
+      fieldErrors[fieldName] = candidate.message;
+    }
+
+    return fieldErrors;
+  }, {});
 }
 
 function ErrorSummary({
@@ -331,6 +375,7 @@ function UserFormDialog({
   mode,
   open,
   values,
+  fieldErrors,
   isSubmitting,
   nameLabel,
   emailLabel,
@@ -347,6 +392,7 @@ function UserFormDialog({
   mode: DialogMode | null;
   open: boolean;
   values: UserFormValues;
+  fieldErrors: UserFieldErrors;
   isSubmitting: boolean;
   nameLabel: string;
   emailLabel: string;
@@ -366,7 +412,7 @@ function UserFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <form className="space-y-4" action={onSubmitAction}>
+        <form className="space-y-4" action={onSubmitAction} noValidate>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
@@ -380,22 +426,38 @@ function UserFormDialog({
                 value={values.name}
                 onChange={(event) => onValueChange("name", event.target.value)}
                 disabled={isSubmitting}
+                aria-invalid={Boolean(fieldErrors.name)}
+                aria-describedby={
+                  fieldErrors.name ? "user-name-error" : undefined
+                }
                 autoComplete="name"
-                required
               />
+              {fieldErrors.name ? (
+                <p id="user-name-error" className="text-sm text-destructive">
+                  {fieldErrors.name}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="user-email">{emailLabel}</Label>
               <Input
                 id="user-email"
                 name="email"
-                type="email"
+                type="text"
                 value={values.email}
                 onChange={(event) => onValueChange("email", event.target.value)}
                 disabled={isSubmitting}
+                aria-invalid={Boolean(fieldErrors.email)}
+                aria-describedby={
+                  fieldErrors.email ? "user-email-error" : undefined
+                }
                 autoComplete="email"
-                required
               />
+              {fieldErrors.email ? (
+                <p id="user-email-error" className="text-sm text-destructive">
+                  {fieldErrors.email}
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -440,6 +502,7 @@ export default function SWRPage() {
   const [dialogMode, setDialogMode] = useState<DialogMode | null>(null);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [formValues, setFormValues] = useState<UserFormValues>(EMPTY_USER_FORM);
+  const [fieldErrors, setFieldErrors] = useState<UserFieldErrors>({});
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
 
@@ -464,6 +527,7 @@ export default function SWRPage() {
     setDialogMode(null);
     setEditingUserId(null);
     setFormValues(EMPTY_USER_FORM);
+    setFieldErrors({});
   }
 
   function handleDialogOpenChange(open: boolean) {
@@ -479,6 +543,7 @@ export default function SWRPage() {
     setDialogMode("create");
     setEditingUserId(null);
     setFormValues(EMPTY_USER_FORM);
+    setFieldErrors({});
   }
 
   function handleEditClick(user: User) {
@@ -489,9 +554,19 @@ export default function SWRPage() {
       name: user.name,
       email: user.email,
     });
+    setFieldErrors({});
   }
 
   function handleFormValueChange(key: keyof UserFormValues, value: string) {
+    setFieldErrors((current) => {
+      if (!current[key]) {
+        return current;
+      }
+
+      const nextErrors = { ...current };
+      delete nextErrors[key];
+      return nextErrors;
+    });
     setFormValues((current) => ({
       ...current,
       [key]: value,
@@ -527,6 +602,7 @@ export default function SWRPage() {
     }
 
     setNotice(null);
+    setFieldErrors({});
 
     try {
       if (dialogMode === "create") {
@@ -550,6 +626,7 @@ export default function SWRPage() {
 
       resetDialog();
     } catch (submitError) {
+      setFieldErrors(getValidationFieldErrors(submitError));
       setNotice({
         tone: "error",
         message: getErrorMessage(submitError, {
@@ -683,6 +760,7 @@ export default function SWRPage() {
         mode={dialogMode}
         open={isDialogOpen}
         values={formValues}
+        fieldErrors={fieldErrors}
         isSubmitting={isSubmitting}
         nameLabel={t("name")}
         emailLabel={t("email")}
