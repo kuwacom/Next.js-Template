@@ -1,5 +1,6 @@
 import { sendDiscordWebhook } from "@/api/discord/webhooks";
 import { verifyTurnstileToken } from "@/api/cloudflare/turnstile";
+import serverEnv from "@/config/serverEnv";
 import { getFormSubmissionMessage } from "@/lib/forms/messages";
 import {
   contactSubmissionResultSchema,
@@ -33,7 +34,7 @@ function buildDiscordPayload(
 ) {
   // Discord 通知の payload 組み立ても schema に寄せて破損を防ぐ
   return discordWebhookPayloadSchema.parse({
-    avatar_url: process.env.DISCORD_WEBHOOK_AVATAR_URL || undefined,
+    avatar_url: serverEnv.DISCORD_WEBHOOK_AVATAR_URL,
     embeds: [
       {
         color: 0x2563eb,
@@ -92,7 +93,7 @@ function buildDiscordPayload(
         title: "お問い合わせを受信しました",
       },
     ],
-    username: process.env.DISCORD_WEBHOOK_USERNAME || "Next.js Contact Form",
+    username: serverEnv.DISCORD_WEBHOOK_USERNAME,
   });
 }
 

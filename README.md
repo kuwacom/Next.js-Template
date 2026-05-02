@@ -68,11 +68,13 @@ themeシステムも組み込まれています
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
 NEXT_PUBLIC_API_VERSION=v1
 LOG_LEVEL=3
+NEXT_PUBLIC_LOG_LEVEL=5
 ```
 
 - `NEXT_PUBLIC_API_URL` API のベース URL
 - `NEXT_PUBLIC_API_VERSION` API バージョン
-- `LOG_LEVEL` `tslog` のログレベル
+- `LOG_LEVEL` サーバー側 `tslog` のログレベル
+- `NEXT_PUBLIC_LOG_LEVEL` クライアント側 `tslog` のログレベル
 
 最終的な API ベース URL は
 
@@ -82,6 +84,60 @@ ${NEXT_PUBLIC_API_URL}/${NEXT_PUBLIC_API_VERSION}
 
 として組み立てられます
 
+## Cloudflare Turnstile + Discord フォーム
+
+このテンプレートには、Cloudflare Turnstile で BOT 対策しつつ、サーバー側から安全に Discord Webhook を呼び出すフォーム実装を追加しています
+
+### 追加された画面
+
+- `/{locale}/forms/action` Server Action 版
+- `/{locale}/forms/api` API 版
+
+### 追加された API
+
+- `/api/v1/forms/contact` JSON を受け取り、Turnstile を検証して Discord に転送
+
+### 必要な環境変数
+
+```env
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_turnstile_site_key
+CLOUDFLARE_TURNSTILE_SECRET_KEY=your_turnstile_secret_key
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+DISCORD_WEBHOOK_USERNAME=Next.js Contact Form
+DISCORD_WEBHOOK_AVATAR_URL=
+```
+
+- `NEXT_PUBLIC_API_URL` `/from/api` を含む API クライアントのベース URL
+- `NEXT_PUBLIC_API_VERSION` API バージョン。標準では `v1`
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` Turnstile widget 表示用の公開 site key
+- `CLOUDFLARE_TURNSTILE_SECRET_KEY` Siteverify を呼ぶための secret key
+- `DISCORD_WEBHOOK_URL` バックエンドからだけ使う Discord Webhook URL
+- `DISCORD_WEBHOOK_USERNAME` Discord に表示する送信者名
+- `DISCORD_WEBHOOK_AVATAR_URL` Discord に表示するアイコン URL
+
+### `/{locale}/forms/action`
+
+Next.js サーバーが動いていることを前提に、`<form action={serverAction}>` の形で送信する方法です
+
+- 実装場所: `src/app/[locale]/forms/action`
+- 特徴: クライアント側の API 呼び出しコードがほぼ不要
+- 向いている構成: SSR / Route Handlers / Server Actions を含む通常の Next.js サーバー運用
+
+### `/{locale}/forms/api`
+
+ブラウザから同一アプリ内の API へ JSON POST で送信する方法です
+
+- 実装場所: `src/app/[locale]/forms/api`
+- API 本体: `src/app/api/v1/forms/contact/route.ts`
+- フロント側の送信 hook: `src/api/v1/forms/useSubmitContactForm.ts`
+- 向いている構成: Route Handler を含む通常の Next.js サーバー運用
+
+### セキュリティ上のポイント
+
+- Turnstile はクライアント側に置くだけでなく、必ずサーバー側で `Siteverify` を呼んで検証しています
+- Discord Webhook URL は `src/config/serverEnv.ts` からのみ参照し、クライアントへ出していません
+- `/{locale}/forms/api` は同一アプリ内の Next.js API を呼ぶ前提で、追加の CORS 設定は不要です
+- API 呼び出しは `useSWRMutation` と `apiClient` を使い、`users` 系と同じレイヤーにそろえています
 ## ディレクトリ構成
 
 ```text
@@ -279,6 +335,7 @@ NEXTJS_ENV=development
 NEXT_PUBLIC_API_URL=/api
 NEXT_PUBLIC_API_VERSION=v1
 LOG_LEVEL=3
+NEXT_PUBLIC_LOG_LEVEL=5
 ```
 
 ### 2. SSR / API Routes ありで dashboard の Git 連携中心に運用する場合
@@ -348,6 +405,7 @@ export default nextConfig;
 NEXT_PUBLIC_API_URL=https://api.example.com/api
 NEXT_PUBLIC_API_VERSION=v1
 LOG_LEVEL=3
+NEXT_PUBLIC_LOG_LEVEL=5
 ```
 
 #### dashboard 側の設定

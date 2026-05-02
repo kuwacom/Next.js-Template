@@ -1,11 +1,12 @@
 import { createApiClient } from "@/api/apiClient";
+import serverEnv from "@/config/serverEnv";
 import {
   discordWebhookPayloadSchema,
   type DiscordWebhookPayload,
 } from "@/schemas/discord";
 
 export async function sendDiscordWebhook(payload: DiscordWebhookPayload) {
-  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+  const webhookUrl = serverEnv.DISCORD_WEBHOOK_URL;
 
   if (!webhookUrl) {
     return {

@@ -1,5 +1,6 @@
 import logger from "@/services/logger";
 import { authStore } from "@/stores/authStore";
+import env from "@/config/env";
 import { ApiErrorResponse, ApiResultError, ErrorCode } from "@/lib/apiError";
 import { paths } from "@/types/v1/openapi";
 import createClient from "openapi-fetch";
@@ -84,8 +85,8 @@ function isAbsoluteUrl(path: string) {
 }
 
 function buildApiBaseUrl() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-  const apiVersion = process.env.NEXT_PUBLIC_API_VERSION ?? "";
+  const apiUrl = env.NEXT_PUBLIC_API_URL;
+  const apiVersion = env.NEXT_PUBLIC_API_VERSION;
 
   if (!apiVersion) {
     return apiUrl.replace(/\/+$/g, "");

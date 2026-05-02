@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
+import env from "@/config/env";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -69,7 +70,7 @@ export default async function ApiPage({ params }: ApiPageProps) {
         <ApiContactForm
           locale={locale}
           pagePath={`/${locale}/forms/api`}
-          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+          siteKey={env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
         />
 
         <Card className="border-border/60 shadow-sm">

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
+import env from "@/config/env";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -72,7 +73,7 @@ export default async function ActionPage({ params }: ActionPageProps) {
         <ActionContactForm
           locale={locale}
           pagePath={`/${locale}/forms/action`}
-          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+          siteKey={env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
           submitAction={submitContactAction}
         />
 
