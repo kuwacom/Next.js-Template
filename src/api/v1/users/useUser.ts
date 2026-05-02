@@ -2,6 +2,7 @@
 
 import { apiClient } from "@/api/apiClient";
 import { useAuth } from "@/hooks/useAuth";
+import { ApiResultError } from "@/lib/apiError";
 import { User } from "@/types/v1/api";
 import useSWR from "swr";
 
@@ -15,7 +16,7 @@ async function getUserRequest(userId: string): Promise<User> {
 
 export function useUser(userId: string | null) {
   const { authVersion } = useAuth();
-  const swr = useSWR<User>(
+  const swr = useSWR<User, ApiResultError | Error>(
     userId ? userDetailKey(userId, authVersion) : null,
     () => getUserRequest(userId!),
   );
@@ -23,6 +24,6 @@ export function useUser(userId: string | null) {
   return {
     ...swr,
     user: swr.data,
-    isError: swr.error,
+    error: swr.error,
   };
 }

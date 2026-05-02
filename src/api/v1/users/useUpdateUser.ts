@@ -2,6 +2,7 @@
 
 import { apiClient } from "@/api/apiClient";
 import { useAuth } from "@/hooks/useAuth";
+import { ApiResultError } from "@/lib/apiError";
 import { User, UserRequest, UserResponse } from "@/types/v1/api";
 import { useSWRConfig } from "swr";
 import useSWRMutation from "swr/mutation";
@@ -34,14 +35,17 @@ export function useUpdateUser() {
   const { mutate } = useSWRConfig();
   const mutation = useSWRMutation<
     User,
-    Error,
+    ApiResultError | Error,
     ReturnType<typeof updateUserKey>,
     UpdateUserArgs
   >(updateUserKey(authVersion), async (_key, { arg }) =>
     updateUserRequest(arg.userId, arg.user),
   );
 
-  const updateUser = async ({ userId, user }: UpdateUserArgs) => {
+  const updateUser = async ({
+    userId,
+    user,
+  }: UpdateUserArgs): Promise<User> => {
     const updatedUser = await mutation.trigger({ userId, user });
 
     await mutate(userDetailKey(userId, authVersion), updatedUser, {

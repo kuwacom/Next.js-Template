@@ -346,7 +346,14 @@
     "deleteConfirm": "Delete {name}?",
     "deleteFailed": "Failed to delete user",
     "updateFailed": "Failed to update user",
-    "addFailed": "Failed to add user"
+    "addFailed": "Failed to add user",
+    "requestFailed": "Request failed",
+    "apiErrorTitle": "API Error",
+    "requestErrorTitle": "Request Error",
+    "validationError": "Please check your input",
+    "unauthorizedError": "You need to sign in",
+    "forbiddenError": "You do not have permission to perform this action",
+    "notFoundError": "The target user could not be found"
   },
   "article": {
     "metaSuffix": "Docs",

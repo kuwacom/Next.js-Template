@@ -8,6 +8,7 @@ import {
   useUpdateUser,
   useUsers,
 } from "@/api/v1/users";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -19,6 +20,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  ApiResultError,
+  ErrorCode,
+  isApiResultError,
+} from "@/lib/apiError";
 import { User } from "@/types/v1/api";
 
 type DialogMode = "create" | "edit";
@@ -31,6 +37,20 @@ type UserFormValues = {
 type Notice = {
   tone: "success" | "error";
   message: string;
+  error?: unknown;
+};
+
+type ErrorMessages = {
+  fallback: string;
+  validation: string;
+  unauthorized: string;
+  forbidden: string;
+  notFound: string;
+};
+
+type ErrorTitles = {
+  api: string;
+  request: string;
 };
 
 const EMPTY_USER_FORM: UserFormValues = {
@@ -38,12 +58,78 @@ const EMPTY_USER_FORM: UserFormValues = {
   email: "",
 };
 
-function getErrorMessage(error: unknown, fallback: string) {
+function getErrorMessage(error: unknown, messages: ErrorMessages) {
+  if (isApiResultError(error)) {
+    switch (error.code) {
+      case ErrorCode.VALIDATION_ERROR:
+        return messages.validation;
+      case ErrorCode.UNAUTHORIZED:
+        return messages.unauthorized;
+      case ErrorCode.FORBIDDEN:
+        return messages.forbidden;
+      case ErrorCode.NOT_FOUND:
+        return messages.notFound;
+      default:
+        return error.message;
+    }
+  }
+
   if (error instanceof Error && error.message) {
     return error.message;
   }
 
-  return fallback;
+  return messages.fallback;
+}
+
+function getErrorTitle(error: unknown, titles: ErrorTitles) {
+  return isApiResultError(error) ? titles.api : titles.request;
+}
+
+function getApiErrorDetails(error: ApiResultError) {
+  if (error.details === undefined) {
+    return null;
+  }
+
+  if (typeof error.details === "string") {
+    return error.details;
+  }
+
+  return JSON.stringify(error.details, null, 2);
+}
+
+function ErrorSummary({
+  error,
+  message,
+  titles,
+}: {
+  error: unknown;
+  message: string;
+  titles: ErrorTitles;
+}) {
+  const apiError = isApiResultError(error) ? error : null;
+  const details = apiError ? getApiErrorDetails(apiError) : null;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant={apiError ? "destructive" : "secondary"}>
+          {getErrorTitle(error, titles)}
+        </Badge>
+        {apiError ? (
+          <>
+            <Badge variant="outline">{apiError.code}</Badge>
+            <Badge variant="outline">HTTP {apiError.status}</Badge>
+          </>
+        ) : null}
+      </div>
+      <p className="text-sm text-muted-foreground">{message}</p>
+      {details ? (
+        <pre className="max-h-40 overflow-auto rounded-md border bg-muted/40 p-3 text-xs">
+          {details}
+        </pre>
+      ) : null}
+    </div>
+  );
 }
 
 function UsersLoadingSkeleton({
@@ -118,17 +204,21 @@ function UsersLoadingSkeleton({
 }
 
 function UsersErrorState({
+  error,
   title,
   retryLabel,
   retryingLabel,
   reloadPageLabel,
+  titles,
   onRetry,
   isRetrying,
 }: {
+  error: unknown;
   title: string;
   retryLabel: string;
   retryingLabel: string;
   reloadPageLabel: string;
+  titles: ErrorTitles;
   onRetry: () => void;
   isRetrying: boolean;
 }) {
@@ -138,6 +228,7 @@ function UsersErrorState({
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <ErrorSummary error={error} message={title} titles={titles} />
         <div className="flex gap-2">
           <Button onClick={onRetry} disabled={isRetrying}>
             {isRetrying ? retryingLabel : retryLabel}
@@ -330,9 +421,21 @@ function UserFormDialog({
 export default function SWRPage() {
   const t = useTranslations("swr");
   const { users, error, isLoading, isValidating, mutate } = useUsers();
-  const { addUser, isMutating: isAddingUser } = useAddUser();
-  const { updateUser, isMutating: isUpdatingUser } = useUpdateUser();
-  const { deleteUser, isMutating: isDeletingUser } = useDeleteUser();
+  const {
+    addUser,
+    error: addUserError,
+    isMutating: isAddingUser,
+  } = useAddUser();
+  const {
+    updateUser,
+    error: updateUserError,
+    isMutating: isUpdatingUser,
+  } = useUpdateUser();
+  const {
+    deleteUser,
+    error: deleteUserError,
+    isMutating: isDeletingUser,
+  } = useDeleteUser();
 
   const [dialogMode, setDialogMode] = useState<DialogMode | null>(null);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
@@ -344,6 +447,18 @@ export default function SWRPage() {
   const isSubmitting = isAddingUser || isUpdatingUser;
   const isBusy = isSubmitting || isDeletingUser;
   const isRefreshing = isValidating && !isLoading;
+  const mutationError = addUserError ?? updateUserError ?? deleteUserError;
+  const errorMessages: ErrorMessages = {
+    fallback: t("failedToLoadUsers"),
+    validation: t("validationError"),
+    unauthorized: t("unauthorizedError"),
+    forbidden: t("forbiddenError"),
+    notFound: t("notFoundError"),
+  };
+  const errorTitles: ErrorTitles = {
+    api: t("apiErrorTitle"),
+    request: t("requestErrorTitle"),
+  };
 
   function resetDialog() {
     setDialogMode(null);
@@ -391,7 +506,8 @@ export default function SWRPage() {
     } catch (refreshError) {
       setNotice({
         tone: "error",
-        message: getErrorMessage(refreshError, t("failedToLoadUsers")),
+        message: getErrorMessage(refreshError, errorMessages),
+        error: refreshError,
       });
     }
   }
@@ -436,10 +552,11 @@ export default function SWRPage() {
     } catch (submitError) {
       setNotice({
         tone: "error",
-        message: getErrorMessage(
-          submitError,
-          dialogMode === "edit" ? t("updateFailed") : t("addFailed"),
-        ),
+        message: getErrorMessage(submitError, {
+          ...errorMessages,
+          fallback: dialogMode === "edit" ? t("updateFailed") : t("addFailed"),
+        }),
+        error: submitError,
       });
     }
   }
@@ -463,7 +580,11 @@ export default function SWRPage() {
     } catch (deleteError) {
       setNotice({
         tone: "error",
-        message: getErrorMessage(deleteError, t("deleteFailed")),
+        message: getErrorMessage(deleteError, {
+          ...errorMessages,
+          fallback: t("deleteFailed"),
+        }),
+        error: deleteError,
       });
     } finally {
       setDeletingUserId(null);
@@ -501,17 +622,37 @@ export default function SWRPage() {
               : "rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
           }
         >
-          {notice.message}
+          {notice.tone === "error" && notice.error ? (
+            <ErrorSummary
+              error={notice.error}
+              message={notice.message}
+              titles={errorTitles}
+            />
+          ) : (
+            notice.message
+          )}
+        </div>
+      ) : null}
+
+      {!notice && mutationError ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <ErrorSummary
+            error={mutationError}
+            message={t("requestFailed")}
+            titles={errorTitles}
+          />
         </div>
       ) : null}
 
       <section aria-busy={isLoading || isBusy}>
         {error ? (
           <UsersErrorState
-            title={getErrorMessage(error, t("failedToLoadUsers"))}
+            error={error}
+            title={getErrorMessage(error, errorMessages)}
             retryLabel={t("retry")}
             retryingLabel={t("refreshing")}
             reloadPageLabel={t("reloadPage")}
+            titles={errorTitles}
             onRetry={() => void handleRefresh()}
             isRetrying={isRefreshing}
           />

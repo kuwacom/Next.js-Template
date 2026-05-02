@@ -346,7 +346,14 @@
     "deleteConfirm": "{name} を削除しますか？",
     "deleteFailed": "ユーザーの削除に失敗しました",
     "updateFailed": "ユーザーの更新に失敗しました",
-    "addFailed": "ユーザーの追加に失敗しました"
+    "addFailed": "ユーザーの追加に失敗しました",
+    "requestFailed": "リクエストに失敗しました",
+    "apiErrorTitle": "API エラー",
+    "requestErrorTitle": "リクエストエラー",
+    "validationError": "入力内容を確認してください",
+    "unauthorizedError": "ログインが必要です",
+    "forbiddenError": "操作する権限がありません",
+    "notFoundError": "対象のユーザーが見つかりません"
   },
   "article": {
     "metaSuffix": "ドキュメント",

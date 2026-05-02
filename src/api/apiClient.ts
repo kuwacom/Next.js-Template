@@ -1,16 +1,9 @@
 import logger from "@/services/logger";
 import { authStore } from "@/stores/authStore";
+import { ApiErrorResponse, ApiResultError, ErrorCode } from "@/lib/apiError";
 import { paths } from "@/types/v1/openapi";
 import createClient from "openapi-fetch";
 import type { ZodType } from "zod";
-
-export class APIError<T> extends Error {
-  constructor(public status: number, public data: T, message?: string) {
-    super(message);
-    this.name = "APIError";
-  }
-}
-
 interface APIClientConfig {
   baseUrl: string;
   defaultHeaders?: Record<string, string>;
@@ -27,9 +20,39 @@ interface RequestOptions<TBody = unknown, TResponse = unknown> {
   timeout?: number;
 }
 
-type ApiResult<T, U> =
+type ApiClientResult<T, U> =
   | { data: T; error?: undefined }
   | { data?: undefined; error: U };
+
+function isApiErrorResponse(data: unknown): data is ApiErrorResponse {
+  if (data == null || typeof data !== "object") {
+    return false;
+  }
+
+  const candidate = data as Partial<ApiErrorResponse>;
+  return (
+    typeof candidate.code === "string" &&
+    Object.values(ErrorCode).includes(candidate.code) &&
+    typeof candidate.message === "string"
+  );
+}
+
+function createApiResultError(
+  status: number,
+  data: unknown,
+  fallbackMessage: string,
+) {
+  if (isApiErrorResponse(data)) {
+    return new ApiResultError(status, data.code, data.message, data.details);
+  }
+
+  return new ApiResultError(
+    status,
+    ErrorCode.INTERNAL_SERVER_ERROR,
+    fallbackMessage,
+    data,
+  );
+}
 
 function normalizeUrlSegment(segment: string) {
   return segment.replace(/^\/+|\/+$/g, "");
@@ -211,7 +234,7 @@ export class APIClient {
   ): never {
     logger.error(`API Request Failed: ${method} ${path}`, error);
 
-    if ((error as Error).name === "AbortError") {
+    if (error instanceof Error && error.name === "AbortError") {
       throw new Error(`Request timeout after ${timeout}ms`);
     }
 
@@ -226,7 +249,7 @@ export class APIClient {
     method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
     path: string,
     options?: RequestOptions<TBody, T>,
-  ): Promise<ApiResult<T, U>> {
+  ): Promise<ApiClientResult<T, U>> {
     const timeout = this.getTimeout(options);
     const headers = this.buildHeaders(options);
 
@@ -259,7 +282,7 @@ export class APIClient {
           status: response.response.status,
         });
 
-        throw new APIError(
+        throw createApiResultError(
           response.response.status,
           response.error,
           `API Error: ${response.response.status}`,
@@ -272,7 +295,7 @@ export class APIClient {
         data: this.parseResponseData(response.data, options),
       };
     } catch (error) {
-      if (error instanceof APIError) {
+      if (error instanceof ApiResultError) {
         throw error;
       }
 
@@ -284,7 +307,7 @@ export class APIClient {
     method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
     pathOrUrl: string,
     options?: RequestOptions<TBody, T>,
-  ): Promise<ApiResult<T, U>> {
+  ): Promise<ApiClientResult<T, U>> {
     const timeout = this.getTimeout(options);
     const headers = this.buildHeaders(options);
     const url = this.resolveUrl(pathOrUrl);
@@ -320,9 +343,9 @@ export class APIClient {
           status: response.status,
         });
 
-        throw new APIError(
+        throw createApiResultError(
           response.status,
-          responseData as U,
+          responseData,
           `API Error: ${response.status}`,
         );
       }
@@ -333,7 +356,7 @@ export class APIClient {
         data: this.parseResponseData(responseData, options),
       };
     } catch (error) {
-      if (error instanceof APIError) {
+      if (error instanceof ApiResultError) {
         throw error;
       }
 
