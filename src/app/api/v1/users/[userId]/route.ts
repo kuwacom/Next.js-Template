@@ -1,73 +1,71 @@
-import { users } from "@/services/UserService";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(
-  _: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
-  const { userId } = await params;
-  const id = parseInt(userId, 10);
+import {
+  apiError,
+  apiHandler,
+  ErrorCode,
+  readJsonBody,
+} from "@/lib/apiError";
+import { userParamsSchema, userRequestSchema } from "@/schemas/user";
+import { users } from "@/services/UserService";
 
-  if (Number.isNaN(id)) {
-    return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
+type UserRouteContext = {
+  params: Promise<{ userId: string }>;
+};
+
+async function getValidatedUserId(params: Promise<{ userId: string }>) {
+  const validation = userParamsSchema.safeParse(await params);
+
+  if (!validation.success) {
+    throw apiError(ErrorCode.VALIDATION_ERROR, validation.error.issues);
   }
 
+  return validation.data.userId;
+}
+
+export const GET = apiHandler<UserRouteContext>(async (_, { params }) => {
+  const id = await getValidatedUserId(params);
   const user = users.find((item) => item.id === id);
 
   if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+    throw apiError(ErrorCode.NOT_FOUND, "User");
   }
 
   return NextResponse.json(user);
-}
+});
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
-  const { userId } = await params;
-  const id = parseInt(userId, 10);
+export const PUT = apiHandler<UserRouteContext>(
+  async (request: NextRequest, { params }) => {
+    const id = await getValidatedUserId(params);
+    const body = await readJsonBody(request);
+    const validation = userRequestSchema.safeParse(body);
 
-  if (Number.isNaN(id)) {
-    return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
-  }
+    if (!validation.success) {
+      throw apiError(ErrorCode.VALIDATION_ERROR, validation.error.issues);
+    }
 
-  const body = await request.json();
-  const { name, email } = body;
+    const userIndex = users.findIndex((item) => item.id === id);
 
-  if (!name || !email) {
-    return NextResponse.json(
-      { error: "Name and email are required" },
-      { status: 400 }
-    );
-  }
+    if (userIndex === -1) {
+      throw apiError(ErrorCode.NOT_FOUND, "User");
+    }
 
+    users[userIndex] = {
+      id,
+      name: validation.data.name,
+      email: validation.data.email,
+    };
+
+    return NextResponse.json(users[userIndex]);
+  },
+);
+
+export const DELETE = apiHandler<UserRouteContext>(async (_, { params }) => {
+  const id = await getValidatedUserId(params);
   const userIndex = users.findIndex((item) => item.id === id);
 
   if (userIndex === -1) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  users[userIndex] = { id, name, email };
-
-  return NextResponse.json(users[userIndex]);
-}
-
-export async function DELETE(
-  _: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
-  const { userId } = await params;
-  const id = parseInt(userId, 10);
-
-  if (Number.isNaN(id)) {
-    return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
-  }
-
-  const userIndex = users.findIndex((item) => item.id === id);
-
-  if (userIndex === -1) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+    throw apiError(ErrorCode.NOT_FOUND, "User");
   }
 
   const deletedUser = users.splice(userIndex, 1)[0];
@@ -76,4 +74,4 @@ export async function DELETE(
     message: "User deleted successfully",
     user: deletedUser,
   });
-}
+});
