@@ -67,7 +67,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
   /users/{userId}:
     get:
       summary: Get a user by ID
@@ -89,13 +89,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
         '404':
           description: User not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
     put:
       summary: Update a user by ID
       parameters:
@@ -122,13 +122,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
         '404':
           description: User not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
     delete:
       summary: Delete a user by ID
       parameters:
@@ -149,13 +149,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
         '404':
           description: User not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
 components:
   schemas:
     ContactFormRequest:
@@ -266,13 +266,34 @@ components:
       required:
         - message
         - user
-    ErrorResponse:
+    ApiErrorResponse:
+      oneOf:
+        - $ref: '#/components/schemas/ValidationErrorResponse'
+        - $ref: '#/components/schemas/ErrorResponse'
+    ValidationErrorResponse:
       type: object
       properties:
         code:
           type: string
           enum:
             - VALIDATION_ERROR
+        message:
+          type: string
+          example: Validation failed
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZodIssue'
+      required:
+        - code
+        - message
+        - details
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          enum:
             - NOT_FOUND
             - UNAUTHORIZED
             - FORBIDDEN
@@ -281,8 +302,24 @@ components:
         message:
           type: string
           example: User not found
-        details:
-          description: バリデーションエラーの詳細など
       required:
         - code
         - message
+    ZodIssue:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        path:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: integer
+      required:
+        - code
+        - message
+        - path
+      additionalProperties: true

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import type { ZodIssue } from "zod";
 
 import logger from "@/services/logger";
 
@@ -19,11 +20,20 @@ export const ErrorCode = {
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
-export interface ApiErrorResponse {
-  code: ErrorCode;
+export type ValidationErrorDetails = ZodIssue[];
+
+type ValidationErrorResponse = {
+  code: typeof ErrorCode.VALIDATION_ERROR;
   message: string;
-  details?: unknown;
-}
+  details: ValidationErrorDetails;
+};
+
+export type ErrorResponse = {
+  code: Exclude<ErrorCode, typeof ErrorCode.VALIDATION_ERROR>;
+  message: string;
+};
+
+export type ApiErrorResponse = ValidationErrorResponse | ErrorResponse;
 
 /**
  * # ApiResultError
@@ -36,19 +46,19 @@ export interface ApiErrorResponse {
 export class ApiResultError extends Error {
   public readonly status: number;
   public readonly code: ErrorCode;
-  public readonly details?: unknown;
+  public readonly details?: ValidationErrorDetails;
 
   public constructor(
     status: number,
     code: ErrorCode,
     message: string,
-    details?: unknown,
+    details?: ValidationErrorDetails,
   ) {
     super(message);
     this.name = "ApiResultError";
     this.status = status;
     this.code = code;
-    this.details = details;
+    this.details = code === ErrorCode.VALIDATION_ERROR ? details : undefined;
   }
 }
 
@@ -74,21 +84,21 @@ export function isApiResultError(err: unknown): err is ApiResultError {
 export class ApiError extends Error {
   public readonly statusCode: number;
   public readonly code: ErrorCode;
-  public readonly details?: unknown;
+  public readonly details?: ValidationErrorDetails;
   public readonly isExpected: boolean;
 
   public constructor(
     statusCode: number,
     code: ErrorCode,
     message: string,
-    details?: unknown,
+    details?: ValidationErrorDetails,
     isExpected = true,
   ) {
     super(message);
     this.name = "ApiError";
     this.statusCode = statusCode;
     this.code = code;
-    this.details = details;
+    this.details = code === ErrorCode.VALIDATION_ERROR ? details : undefined;
     this.isExpected = isExpected;
   }
 
@@ -99,10 +109,18 @@ export class ApiError extends Error {
    * @returns API 共通エラーレスポンス
    */
   public toResponse(): ApiErrorResponse {
+    // ValidationError の場合は details を含むレスポンス
+    if (this.code === ErrorCode.VALIDATION_ERROR) {
+      return {
+        code: ErrorCode.VALIDATION_ERROR,
+        message: this.message,
+        details: this.details ?? [],
+      };
+    }
+
     return {
       code: this.code,
       message: this.message,
-      ...(this.details !== undefined && { details: this.details }),
     };
   }
 }
@@ -110,7 +128,7 @@ export class ApiError extends Error {
 // ErrorCode ごとに受け取れる引数を固定して補完と型安全を両立する
 // code に応じて必要な追加情報だけを渡せるようにして誤用を防ぐ
 type ApiErrorArgs = {
-  [ErrorCode.VALIDATION_ERROR]: [details?: unknown];
+  [ErrorCode.VALIDATION_ERROR]: [details: ValidationErrorDetails];
   [ErrorCode.NOT_FOUND]: [resource?: string];
   [ErrorCode.UNAUTHORIZED]: [];
   [ErrorCode.FORBIDDEN]: [];
@@ -125,7 +143,7 @@ type ApiErrorBuilderMap = {
 // ErrorCode と ApiError の生成処理を 1 か所に集めて message や statusCode の揺れを防ぐ
 // 追加の ErrorCode が増えてもここを見ればレスポンス方針を追えるようにする
 const apiErrorBuilders: ApiErrorBuilderMap = {
-  [ErrorCode.VALIDATION_ERROR]: (details?: unknown) =>
+  [ErrorCode.VALIDATION_ERROR]: (details: ValidationErrorDetails) =>
     new ApiError(
       400,
       ErrorCode.VALIDATION_ERROR,
@@ -241,8 +259,12 @@ export async function readJsonBody(request: NextRequest): Promise<unknown> {
     const body: unknown = await request.json();
     return body;
   } catch {
-    throw apiError(ErrorCode.VALIDATION_ERROR, {
-      body: "Invalid JSON body",
-    });
+    throw apiError(ErrorCode.VALIDATION_ERROR, [
+      {
+        code: "custom",
+        message: "Invalid JSON body",
+        path: ["body"],
+      },
+    ]);
   }
 }
