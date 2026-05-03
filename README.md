@@ -108,6 +108,7 @@ DISCORD_WEBHOOK_AVATAR_URL=
 ```
 
 - `NEXT_PUBLIC_API_URL` `/from/api` を含む API クライアントのベース URL
+  - `/{locale}/forms/api` から同一アプリ内の API を呼ぶ想定です
 - `NEXT_PUBLIC_API_VERSION` API バージョン。標準では `v1`
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` Turnstile widget 表示用の公開 site key
 - `CLOUDFLARE_TURNSTILE_SECRET_KEY` Siteverify を呼ぶための secret key
@@ -138,22 +139,36 @@ Next.js サーバーが動いていることを前提に、`<form action={server
 - Discord Webhook URL は `src/config/serverEnv.ts` からのみ参照し、クライアントへ出していません
 - `/{locale}/forms/api` は同一アプリ内の Next.js API を呼ぶ前提で、追加の CORS 設定は不要です
 - API 呼び出しは `useSWRMutation` と `apiClient` を使い、`users` 系と同じレイヤーにそろえています
+
 ## ディレクトリ構成
 
 ```text
 src/
 ├─ app/
-│  ├─ api/v1/users/           Route Handler
-│  ├─ docs/                   `/docs/*` 配下のルート
-│  ├─ page.tsx                UI コンポーネントのデモ
-│  └─ swr/page.tsx            SWR CRUD デモ
+│  ├─ [locale]/
+│  │  ├─ docs/                `/{locale}/docs/*` 配下のルート
+│  │  ├─ forms/               `/{locale}/forms/*` 配下のフォーム画面
+│  │  ├─ swr/                 `/{locale}/swr` の CRUD デモ
+│  │  ├─ layout.tsx           locale 単位のレイアウト
+│  │  └─ page.tsx             locale 付きトップページ
+│  ├─ api/v1/forms/contact/   フォーム送信用 Route Handler
+│  └─ api/v1/users/           Route Handler
 ├─ api/
 │  ├─ apiClient.ts            共通 API クライアント
+│  ├─ cloudflare/             Turnstile 検証 API
+│  ├─ discord/                Discord Webhook API
 │  ├─ fetcher.ts              共通 fetcher
+│  ├─ v1/forms/               contact エンドポイント用 hooks
 │  └─ v1/users/               users エンドポイント用 hooks
 ├─ components/                UI / Provider 群
 ├─ hooks/
 │  └─ useAuth.ts              authStore の React 向け窓口
+├─ i18n/                      next-intl の routing / navigation 定義
+├─ lib/forms/
+│  ├─ contact.ts              フォーム送信ロジック
+│  └─ messages.ts             フォーム文言の locale 解決
+├─ messages/                  next-intl の翻訳 JSON
+├─ schemas/                   zod スキーマ
 ├─ stores/
 │  └─ authStore.ts            認証状態の外部ストア
 ├─ services/
@@ -167,10 +182,16 @@ openapi/
 └─ v1.yaml                    OpenAPI 定義
 
 content/docs/
-├─ getting-started.mdx        MDX 記事サンプル
-└─ guides/
-   ├─ index.mdx               フォルダ index サンプル
-   └─ writing-docs.mdx        ネスト記事サンプル
+├─ en/
+│  ├─ getting-started.mdx     英語記事サンプル
+│  └─ guides/
+│     ├─ index.mdx            英語のフォルダ index サンプル
+│     └─ writing-docs.mdx     英語のネスト記事サンプル
+└─ ja/
+   ├─ getting-started.mdx     日本語記事サンプル
+   └─ guides/
+      ├─ index.mdx            日本語のフォルダ index サンプル
+      └─ writing-docs.mdx     日本語のネスト記事サンプル
 
 mdx-components.tsx            MDX 共通コンポーネント定義
 DESIGN.md                     AI及び人間用のデザイン指示md
@@ -178,13 +199,15 @@ DESIGN.md                     AI及び人間用のデザイン指示md
 
 ## MDX 記事システム
 
-- 記事ファイルは `content/docs/` に配置します
-- URL は `/docs/*` にルーティングされます
-  - `content/docs/getting-started.mdx` → `/docs/getting-started`
-  - `content/docs/guides/index.mdx` → `/docs/guides`
-  - `content/docs/guides/writing-docs.mdx` → `/docs/guides/writing-docs`
+- 記事ファイルは `content/docs/[locale]/` に配置します
+- URL は `/{locale}/docs/*` にルーティングされます
+  - `content/docs/ja/getting-started.mdx` → `/ja/docs/getting-started`
+  - `content/docs/en/getting-started.mdx` → `/en/docs/getting-started`
+  - `content/docs/ja/guides/index.mdx` → `/ja/docs/guides`
+  - `content/docs/en/guides/writing-docs.mdx` → `/en/docs/guides/writing-docs`
 - 各フォルダに `index.mdx` を置くと、そのフォルダ自身の URL をトップページとして使えます
 - `.mdx` は `@next/mdx` によって Next.js のビルド時にコンパイルされます
+- ルーティングと locale 切り替えは `next-intl` の設定に従います
 - 各記事の先頭で `metadata` を export してください
 
 ```mdx
