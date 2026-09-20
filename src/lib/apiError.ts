@@ -1,3 +1,13 @@
+/**
+ * # apiError
+ * API エラーの共通定義をまとめたモジュール
+ *
+ * ### 利用範囲
+ * - サーバー専用: ApiError, apiError, apiErrorResponse, apiHandler, readJsonBody
+ * - クライアント専用: ApiResultError, isApiResultError
+ * - サーバー / クライアント共通: ErrorCode, ErrorCode 型, ValidationErrorDetails, ErrorResponse, ApiErrorResponse
+ */
+
 import { NextResponse, type NextRequest } from "next/server";
 import type { ZodIssue } from "zod";
 

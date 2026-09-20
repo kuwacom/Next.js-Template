@@ -79,6 +79,7 @@ NEXT_PUBLIC_LOG_LEVEL=5
 - `NEXT_PUBLIC_API_VERSION` API バージョン
 - `LOG_LEVEL` サーバー側 `tslog` のログレベル
 - `NEXT_PUBLIC_LOG_LEVEL` クライアント側 `tslog` のログレベル
+- `SITE_URL` metadataBase / sitemap / robots の基準 URL（未設定時は `http://localhost:3000`）
 
 最終的な API ベース URL は
 
@@ -229,6 +230,37 @@ draft: false
 - `rehype-slug` 見出しに id を付与
 - `remark-toc` 目次の生成
 - `remark-breaks` 改行の反映
+
+## SEO 基盤
+
+metadata、sitemap、robots の土台を実装済みです
+
+- `src/config/serverEnv.ts` の `SITE_URL` が基準 URL になります（未設定時は `http://localhost:3000`）
+- `src/app/layout.tsx` で `metadataBase` と `title.template` を設定済み。ページ側は `title` だけ返せば `%s | Next.js Template` 形で出力されます
+- `src/app/sitemap.ts` が `/sitemap.xml`、`src/app/robots.ts` が `/robots.txt` を生成します。ビルド時に静的に書き出されるため、SSR / 静的 export のどちらでも動きます
+
+### route を変更したとき
+
+`src/app/sitemap.ts` の `publicRoutes` は実在する公開ページの列挙です。route を追加・削除したら一緒に更新してください
+
+### 静的 export にしたいとき
+
+main は Route Handlers、Server Action、proxy という SSR 機能込みの構成です。静的サイトとして export する場合は、次の手順でサーバー機能を取り除きます
+
+1. `src/app/api/` を削除する（Route Handler は静的 export 不可）
+2. `src/app/from/` を削除する（両フォームともサーバー連携が前提）
+3. `src/proxy.ts` を削除する（middleware 相当は静的 export 不可）
+4. `src/app/swr/` と `src/api/` のサンプルは外部 API があれば動作するため、用途に合わせて調整する
+5. `next.config.ts` に `output: "export"` を設定する
+
+### OpenNext（Workers）で OGP 画像を動的生成する場合
+
+`opengraph-image.tsx` 等の OGP 画像生成ルートには注意が必要です
+
+- `export const runtime = "edge"` をエクスポートしない。Next.js 16 では route.js が生成されず、OpenNext 経由で 500 になります
+- `package.json` の build スクリプトを `next build --webpack` に変更する（OpenNext は Turbopack の chunk 構造に非対応のため）
+- satori の `<img src>` に絶対URLを渡さない。Workers からの self-fetch で画像が欠落するため、画像はビルド時に base64 化して data URL で埋め込みます
+- OGP 生成は CPU 負荷が高いため、route 側で `Cache-Control: public, max-age=86400` 等のキャッシュ指定を行います
 
 ## Cloudflare へのデプロイについて
 
