@@ -319,13 +319,11 @@ export function buildMDXHref(slug: string[], basePath: string = "/docs") {
  * MDX 記事から Next.js の `Metadata` を生成します。
  *
  * 詳細ページごとの title / description を統一ルールで組み立てたいときに使います。
+ * title は layout の `title.template` が接尾辞を付与するため、記事タイトルのみを返します。
  */
-export function buildMDXPageMetadata(
-  mdxSummary: MDXSummary,
-  titleSuffix: string = "Docs",
-): Metadata {
+export function buildMDXPageMetadata(mdxSummary: MDXSummary): Metadata {
   return {
-    title: `${mdxSummary.title} | ${titleSuffix}`,
+    title: mdxSummary.title,
     description: mdxSummary.description,
   };
 }
