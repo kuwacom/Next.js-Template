@@ -18,6 +18,7 @@ themeシステムも組み込まれています
 | `feature/mdx` | `content/docs/` と `@next/mdx` を使ったドキュメント / ブログ構成 | App Router 上でシンプルに MDX 記事を配信したいとき |
 | `feature/mdx-i18n` | `next-intl` による多言語ルーティングと、ロケール対応した MDX / フォーム構成 | 日本語 / 英語など複数言語に対応したサイトを始めたいとき |
 | `feature/mdx-velite` | `content/docs/` と `velite` を使ったビルド時コンテンツ生成構成 | MDX を型安全に管理しつつ静的コンテンツを運用したいとき |
+| `feature/mdx-ogp` | `content/docs/` と `@next/mdx` に加え、サイト全体と記事ごとの動的 OGP 画像生成 | MDX 記事の OGP 画像を自動生成したいとき |
 
 ## 特徴
 
@@ -255,6 +256,16 @@ main は Route Handlers、Server Action、proxy という SSR 機能込みの構
 - `package.json` の build スクリプトを `next build --webpack` に変更する（OpenNext は Turbopack の chunk 構造に非対応のため）
 - satori の `<img src>` に絶対URLを渡さない。Workers からの self-fetch で画像が欠落するため、画像はビルド時に base64 化して data URL で埋め込みます
 - OGP 生成は CPU 負荷が高いため、route 側で `Cache-Control: public, max-age=86400` 等のキャッシュ指定を行います
+
+### OGP 画像の動的生成の実装内容
+
+このブランチは上記の注意点を回避した動的 OGP 生成を実装済みです
+
+- `src/components/og/OpenGraphImage.tsx` が画像デザインの共通コンポーネントで、サイト全体（`src/app/opengraph-image.tsx`）と docs 記事（`src/app/docs/[...slug]/opengraph-image.tsx`）から利用します
+- `export const runtime = "edge"` は書いていないため Node ランタイムで動作します
+- ロゴは SVG を base64 化した data URL をコンポーネント内に埋め込んでおり、ランタイムで自己ドメインへ fetch しません
+- 生成レスポンスには `Cache-Control: public, max-age=86400, s-maxage=86400` を設定済みです
+- OG タグはサイト全体が `src/app/opengraph-image.tsx` のファイル規約で自動付与されます。docs 記事は catch-all ルート直下にメタデータファイルを置けないため、Route Handler（`src/app/og/docs/[...slug]/route.ts`）で画像を生成し、`buildMDXPageMetadata` が `openGraph.images` で参照します
 
 ## Cloudflare へのデプロイについて
 

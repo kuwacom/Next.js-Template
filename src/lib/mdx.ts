@@ -325,5 +325,16 @@ export function buildMDXPageMetadata(mdxSummary: MDXSummary): Metadata {
   return {
     title: mdxSummary.title,
     description: mdxSummary.description,
+    openGraph: {
+      images: [
+        {
+          // docs 記事の OGP 画像は /og/docs 配下の Route Handler が生成する
+          url: buildMDXHref(mdxSummary.slug, "/og/docs"),
+          alt: mdxSummary.title,
+          width: 1200,
+          height: 630,
+        },
+      ],
+    },
   };
 }
